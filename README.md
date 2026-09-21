@@ -30,7 +30,7 @@ pip install -r requirements-dev.txt
 
 python scripts/fetch_corpus.py     # 22 Wikipedia articles on shipping & ports
 python scripts/ingest.py           # 459 chunks, ~19s on CPU
-python -m pytest                   # 87 tests, ~0.5s, no network
+python -m pytest                   # 100 tests, ~2s, no network
 
 uvicorn rag.api:app --app-dir src --port 8000
 ```
@@ -155,10 +155,19 @@ that could exceed the word budget.
 approximate index trades recall for a speed-up that is not measurable. The
 swap is one line when the corpus justifies it.
 
-**Why three embedding backends.** `local` (sentence-transformers) for real
-offline use, `gemini` for the hosted free tier, and `hash` — a deterministic
-hashing vectoriser — so the test suite needs no model download, no network and
-no API key. CI runs in seconds and fails only for real reasons.
+**Why the provider is a config value.** Generation and embeddings both sit
+behind an interface, so Gemini, any OpenAI-format endpoint (OpenAI, Groq,
+Together, OpenRouter, a local Ollama or vLLM) and an offline stub are
+interchangeable without touching the pipeline. The adapters are unit-tested
+against fake SDK objects - including that OpenAI embeddings are re-sorted by
+`index`, since the API does not promise response order and silently attaching
+vectors to the wrong chunks is the kind of bug that only shows up as slightly
+worse recall.
+
+**Why four embedding backends.** `local` (sentence-transformers) for real
+offline use, `gemini` and `openai` for the hosted options, and `hash` — a
+deterministic hashing vectoriser — so the test suite needs no model download,
+no network and no API key. CI runs in seconds and fails only for real reasons.
 
 ---
 
@@ -201,7 +210,7 @@ diagnosable after the fact rather than a mystery.
 
 ## Testing
 
-87 tests, no network, no API key, ~0.5s.
+100 tests, no network, no API key, ~2s.
 
 ```bash
 python -m pytest
@@ -223,6 +232,7 @@ shows up in the pull request.
 - **The golden sets are author-written**, which risks encoding the same
   assumptions the retriever was built on. The keyword set was added
   specifically because the first set turned out to flatter dense retrieval.
+- **The reported numbers use the `local` embedder and the `mock` LLM**, so they are reproducible from a clean clone; the hosted backends share the same interfaces and the same tests.
 - **No reranker in the reported numbers.** `CrossEncoderReranker` is wired in
   and selectable, but adds a model download, so the committed results are
   without it.

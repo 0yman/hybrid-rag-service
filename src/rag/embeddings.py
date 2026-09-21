@@ -171,6 +171,61 @@ class GeminiEmbedder(Embedder):
         return self._embed([text], "RETRIEVAL_QUERY")[0]
 
 
+class OpenAIEmbedder(Embedder):
+    """OpenAI-format embeddings, batched and retried.
+
+    `text-embedding-3-*` supports `dimensions`, which truncates the vector
+    server-side. Smaller vectors mean a smaller index and faster search for a
+    small accuracy cost - worth exposing rather than hard-coding.
+    """
+
+    def __init__(self, settings: Settings) -> None:
+        from openai import OpenAI
+
+        self._settings = settings
+        self._client = OpenAI(
+            api_key=settings.require_openai_key(),
+            base_url=settings.openai_base_url or None,
+            timeout=settings.request_timeout_ms / 1000,
+            max_retries=0,
+        )
+        self._model = settings.openai_embedding_model
+        self.dim = settings.openai_embedding_dim
+        self.name = f"{self._model}-{self.dim}"
+
+    def _embed(self, texts: list[str]) -> np.ndarray:
+        vectors: list[list[float]] = []
+        batch = self._settings.embed_batch_size
+        for start in range(0, len(texts), batch):
+            response = self._call_with_retry(texts[start : start + batch])
+            # The API does not guarantee response order, so sort by index.
+            ordered = sorted(response.data, key=lambda item: item.index)
+            vectors.extend(item.embedding for item in ordered)
+        return l2_normalize(np.asarray(vectors, dtype=np.float32))
+
+    def _call_with_retry(self, texts: list[str]):
+        settings = self._settings
+        for attempt in range(settings.max_retries):
+            try:
+                return self._client.embeddings.create(
+                    model=self._model, input=texts, dimensions=self.dim
+                )
+            except Exception as exc:
+                if not _is_retryable(exc) or attempt == settings.max_retries - 1:
+                    raise
+                delay = settings.retry_base_delay * (2**attempt)
+                delay += random.uniform(0, delay * 0.1)
+                logger.warning("Embedding call failed (%s); retrying in %.1fs", exc, delay)
+                time.sleep(delay)
+        raise RuntimeError("Unreachable retry state")
+
+    def embed_documents(self, texts: list[str]) -> np.ndarray:
+        return self._embed(texts)
+
+    def embed_query(self, text: str) -> np.ndarray:
+        return self._embed([text])[0]
+
+
 _RETRYABLE_MARKERS = ("429", "rate limit", "resource_exhausted", "503", "500", "unavailable", "deadline")
 
 
@@ -183,6 +238,8 @@ def get_embedder(settings: Settings) -> Embedder:
     backend = settings.embedding_backend
     if backend == "gemini":
         return GeminiEmbedder(settings)
+    if backend == "openai":
+        return OpenAIEmbedder(settings)
     if backend == "local":
         return LocalEmbedder(settings.local_embedding_model)
     if backend == "hash":

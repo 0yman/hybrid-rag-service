@@ -10,8 +10,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
-EmbeddingBackend = Literal["gemini", "local", "hash"]
-LLMBackend = Literal["gemini", "mock"]
+EmbeddingBackend = Literal["gemini", "openai", "local", "hash"]
+LLMBackend = Literal["gemini", "openai", "mock"]
 
 
 class Settings(BaseSettings):
@@ -23,11 +23,20 @@ class Settings(BaseSettings):
 
     # --- providers -------------------------------------------------------
     google_api_key: str | None = Field(default=None, alias="GOOGLE_API_KEY")
+    openai_api_key: str | None = Field(default=None, alias="OPENAI_API_KEY")
     embedding_backend: EmbeddingBackend = "local"
     llm_backend: LLMBackend = "gemini"
     gemini_embedding_model: str = "gemini-embedding-001"
     gemini_chat_model: str = "gemini-3.6-flash"
     local_embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
+
+    # Any OpenAI-format endpoint: blank for OpenAI itself, or point at Groq,
+    # Together, OpenRouter, a local Ollama or vLLM. Same wire format, same
+    # adapter. (Note that not every such host serves an embeddings route.)
+    openai_base_url: str = ""
+    openai_chat_model: str = "gpt-4o-mini"
+    openai_embedding_model: str = "text-embedding-3-small"
+    openai_embedding_dim: int = 1536
 
     # Gemini's free tier allows ~15 requests/minute; batch and pace accordingly.
     embed_batch_size: int = 32
@@ -57,6 +66,15 @@ class Settings(BaseSettings):
     # --- storage ---------------------------------------------------------
     index_dir: Path = REPO_ROOT / "data" / "index"
     corpus_dir: Path = REPO_ROOT / "data" / "corpus"
+
+    def require_openai_key(self) -> str:
+        if not self.openai_api_key:
+            raise RuntimeError(
+                "OPENAI_API_KEY is not set. Put it in .env, or switch the "
+                "backend back with RAG_LLM_BACKEND=gemini / "
+                "RAG_EMBEDDING_BACKEND=local."
+            )
+        return self.openai_api_key
 
     def require_api_key(self) -> str:
         if not self.google_api_key:

@@ -137,6 +137,69 @@ class GeminiLLM(LLMClient):
         raise RuntimeError("Unreachable retry state")
 
 
+class OpenAICompatibleLLM(LLMClient):
+    """Any OpenAI-format chat-completions endpoint.
+
+    OpenAI, Groq, Together, OpenRouter and a local Ollama or vLLM all serve
+    this same wire format, so one adapter plus a `base_url` covers all of
+    them. Keeping generation behind `LLMClient` is what makes that a config
+    change rather than a rewrite.
+    """
+
+    def __init__(self, settings: Settings) -> None:
+        from openai import OpenAI
+
+        self._settings = settings
+        self._client = OpenAI(
+            api_key=settings.require_openai_key(),
+            base_url=settings.openai_base_url or None,
+            timeout=settings.request_timeout_ms / 1000,
+            # One retry layer only - the backoff below is this module's.
+            max_retries=0,
+        )
+        self._model = settings.openai_chat_model
+        self.name = self._model
+
+    def generate(self, system: str, prompt: str) -> LLMResponse:
+        response = self._call_with_retry(
+            {
+                "model": self._model,
+                "messages": [
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": prompt},
+                ],
+                "temperature": self._settings.temperature,
+                "max_tokens": self._settings.max_output_tokens,
+            }
+        )
+        message = response.choices[0].message if response.choices else None
+        usage = {}
+        if getattr(response, "usage", None):
+            usage = {
+                "prompt_tokens": response.usage.prompt_tokens or 0,
+                "output_tokens": response.usage.completion_tokens or 0,
+            }
+        return LLMResponse(
+            text=((getattr(message, "content", None) or "").strip()),
+            usage=usage,
+            model=self._model,
+        )
+
+    def _call_with_retry(self, kwargs):
+        settings = self._settings
+        for attempt in range(settings.max_retries):
+            try:
+                return self._client.chat.completions.create(**kwargs)
+            except Exception as exc:
+                if not is_retryable(exc) or attempt == settings.max_retries - 1:
+                    raise
+                delay = settings.retry_base_delay * (2**attempt)
+                delay += random.uniform(0, delay * 0.1)  # jitter avoids lockstep retries
+                logger.warning("OpenAI call failed (%s); retrying in %.1fs", exc, delay)
+                time.sleep(delay)
+        raise RuntimeError("Unreachable retry state")
+
+
 _RETRYABLE_MARKERS = (
     "429", "rate limit", "resource_exhausted", "503", "500",
     "unavailable", "deadline", "internal error",
@@ -178,6 +241,8 @@ def get_llm(settings: Settings) -> LLMClient:
     backend = settings.llm_backend
     if backend == "gemini":
         return GeminiLLM(settings)
+    if backend == "openai":
+        return OpenAICompatibleLLM(settings)
     if backend == "mock":
         return MockLLM()
     raise ValueError(f"Unknown LLM backend: {backend!r}")
