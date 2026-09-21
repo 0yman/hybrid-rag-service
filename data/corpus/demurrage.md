@@ -1,0 +1,28 @@
+# Demurrage
+
+"Demurrage"  in vessel chartering is the amount of liquidated damages owed by a charterer to a shipowner when the charterer remained in possession of the vessel for the purpose of loading and unloading (laytime) beyond the time allowed by contract. That is, demurrage describes the charges that the charterer pays to the ship owner for its delayed operations of loading or unloading. Officially, demurrage is a form of liquidated damages for breaching the laytime as it is stated in the governing contract (the charterparty). The demurrage sometimes causes a loss to the seller as it increases cost of the total freight.
+The inverse of demurrage is despatch. If the charterer requires the use of the vessel for less time than the laytime allowed, the charterparty may require the shipowner to pay despatch for the time saved.
+
+## Shipping
+In commercial ship chartering, demurrage is an ancillary cost that represents liquidated damages for delays. It occurs when the vessel is prevented from loading or discharging cargo within the stipulated laytime (see affreightment: under Charter-parties). Laytime applies to both liner shipping and tramp shipping.
+In the oil industry, it refers to the excess time taken to discharge or load, as the case may be, in excess of the allowed laytime. Laytime is the term used to quantify the time allowed within which an operation is allowed to be made. Demurrage is laytime consumed less laytime allocated (if any). The master of the ship must give a Notice of Readiness (NOR) to the charterer when the ship has arrived at the port of loading or discharge. The NOR informs the charterer that the ship is ready to load or discharge. The date and time of the NOR determines when laytime is to commence.
+At the end of the stay in port, the port agent draws up a Statement of Facts, setting out a log of events during the ship's stay in port. The Statement of Facts enables a time sheet to be drawn up and signed by the master and the shipper or receiver of the cargo. The time sheet enables laytime and therefore demurrage or despatch to be calculated.
+The demurrage fee is often a daily amount agreed between charterers and ship owners. Ideally, the demurrage fee (per day in US dollars) covers the daily time charter rate, daily voyage costs, and the ship owner's risk premium.
+
+## Container haulage
+Because the supply of a shipping container to a merchant has a similar nature to the contract of a supply of a vessel to a voyage charter, the industry refers to this container usage beyond the time allowed as Container Demurrage. This extra usage usually entitles the container supplier (usually the shipping carrier) to require a payment from the merchant.
+In principle, it can be considered that the similarity between vessel demurrage and container demurrage is correct since both refer to the same concept, which is the late return of equipment supplied by one party to another for the purpose of carrying a cargo. However, the actual regime of container demurrage is still to be determined precisely.
+In container haulage, customers are given a set period in their contract to tip (unload) their container delivery. Acceptable times for tipping are usually between 3 and 4 hours; time spent on site after that is considered "demurrage". Haulers will usually charge an hourly rate for each hour after the allowed time.
+Demurrage can also refer to the cost levied by shipping lines to cover redecoration of the container after use by the merchant, but it could also be the charges by the shipping line to customers for not returning the container in a reasonable time.
+
+In the United States the Federal Maritime Commission issued a final rule on demurrage and detention billing, published on 23 February 2024 and effective from 28 May 2024, which restricts who may be invoiced and when. A charge may be billed either to the party that contracted for the ocean transportation or storage, or to the consignee, but not to both at the same time. Ocean common carriers and marine terminal operators must issue an invoice within 30 calendar days of the date on which charges were last incurred, and non-vessel-operating common carriers within 30 calendar days of the issuance date of the invoice passed to them. The billed party must be given at least 30 calendar days to request a waiver, refund or reduction of the charge, and the billing party must attempt to resolve the request within a further 30 calendar days unless both sides agree to a longer period.
+
+## Railway transport
+
+On railways, it is the charge on detention of trucks (or rolling stock), either to the shipper for holding the car (laden or not), or to the connecting railroad(s) while the car is empty and returning to the home road (in either case, as a way to encourage speedy unloading and return of empties to improve utilisation of rolling stock).
+
+## Business and banking
+In business, demurrage is a delay in delivery of a product via delivery truck. When a delay occurs with product delivery, the delivery party can elect to claim a no fault delay by submitting a demurrage charge. Criteria for allowable demurrage, payment conditions, and payment terms for demurrage are typically prenegotiated and accepted by the vendor via contract prior to conduct of business. Some vendors allow free no-cost time for limited hour(s) when demurrage occurs, others do not allow free time for delays. The demurrage charge is normally an hourly rate. Unforeseeable until delivery, costs of delays are sometimes separately invoiced from the cost of deliverable.
+In banking, demurrage is the charge per ounce made by the Bank of England in exchanging coin or notes for bullion.
+
+_Source: https://en.wikipedia.org/wiki/Demurrage (CC BY-SA 4.0)_

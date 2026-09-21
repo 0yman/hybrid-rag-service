@@ -1,0 +1,238 @@
+{
+  "generated_at": "2026-09-21 13:39 UTC",
+  "k": 3,
+  "stats": {
+    "chunks": 459,
+    "documents": 22,
+    "embedder": "sentence-transformers/all-MiniLM-L6-v2",
+    "embedding_dim": 384,
+    "llm_backend": "gemini",
+    "reranker": null
+  },
+  "questions": 15,
+  "answerable": 15,
+  "retrieval": {
+    "dense only": {
+      "aggregate": {
+        "hit_rate@3": 0.6666666666666666,
+        "recall@3": 0.6666666666666666,
+        "precision@3": 0.2222222222222222,
+        "ndcg@3": 0.5928526173809582,
+        "mrr": 0.5666666666666667
+      },
+      "recall_by_type": {
+        "acronyms": 0.0,
+        "code": 1.0,
+        "code_and_year": 1.0,
+        "rare_proper_noun": 0.6,
+        "technical_term": 0.6666666666666666
+      },
+      "failures": [
+        {
+          "id": "k01",
+          "question": "MARPOL STCW MLC conventions",
+          "expected": [
+            "port_state_control.md"
+          ],
+          "retrieved": [
+            "international_maritime_organization.md"
+          ]
+        },
+        {
+          "id": "k02",
+          "question": "twistlocks 3 inches gap 40-foot",
+          "expected": [
+            "twenty_foot_equivalent_unit.md"
+          ],
+          "retrieved": [
+            "intermodal_container.md",
+            "container_ship.md"
+          ]
+        },
+        {
+          "id": "k03",
+          "question": "Rhakotis Pharos 1900 BC",
+          "expected": [
+            "port_of_alexandria.md"
+          ],
+          "retrieved": [
+            "suez_canal.md"
+          ]
+        },
+        {
+          "id": "k07",
+          "question": "Amoco Cadiz 1978",
+          "expected": [
+            "port_state_control.md"
+          ],
+          "retrieved": [
+            "international_maritime_organization.md",
+            "suez_canal.md"
+          ]
+        },
+        {
+          "id": "k15",
+          "question": "slotted facility loading docks",
+          "expected": [
+            "warehouse.md"
+          ],
+          "retrieved": [
+            "gantry_crane.md",
+            "container_ship.md"
+          ]
+        }
+      ],
+      "queries": 15
+    },
+    "BM25 only": {
+      "aggregate": {
+        "hit_rate@3": 1.0,
+        "recall@3": 1.0,
+        "precision@3": 0.3333333333333333,
+        "ndcg@3": 0.9753953169047639,
+        "mrr": 0.9666666666666667
+      },
+      "recall_by_type": {
+        "acronyms": 1.0,
+        "code": 1.0,
+        "code_and_year": 1.0,
+        "rare_proper_noun": 1.0,
+        "technical_term": 1.0
+      },
+      "failures": [],
+      "queries": 15
+    },
+    "hybrid (RRF)": {
+      "aggregate": {
+        "hit_rate@3": 0.8666666666666667,
+        "recall@3": 0.8666666666666667,
+        "precision@3": 0.28888888888888886,
+        "ndcg@3": 0.8174573004761944,
+        "mrr": 0.8
+      },
+      "recall_by_type": {
+        "acronyms": 0.0,
+        "code": 1.0,
+        "code_and_year": 1.0,
+        "rare_proper_noun": 1.0,
+        "technical_term": 0.8333333333333334
+      },
+      "failures": [
+        {
+          "id": "k01",
+          "question": "MARPOL STCW MLC conventions",
+          "expected": [
+            "port_state_control.md"
+          ],
+          "retrieved": [
+            "international_maritime_organization.md"
+          ]
+        },
+        {
+          "id": "k02",
+          "question": "twistlocks 3 inches gap 40-foot",
+          "expected": [
+            "twenty_foot_equivalent_unit.md"
+          ],
+          "retrieved": [
+            "intermodal_container.md"
+          ]
+        }
+      ],
+      "queries": 15
+    }
+  },
+  "best_retriever": "BM25 only",
+  "llm_backend": "gemini",
+  "complementarity": {
+    "dense_only": [],
+    "lexical_only": [
+      {
+        "id": "k01",
+        "question": "MARPOL STCW MLC conventions"
+      },
+      {
+        "id": "k02",
+        "question": "twistlocks 3 inches gap 40-foot"
+      },
+      {
+        "id": "k03",
+        "question": "Rhakotis Pharos 1900 BC"
+      },
+      {
+        "id": "k07",
+        "question": "Amoco Cadiz 1978"
+      },
+      {
+        "id": "k15",
+        "question": "slotted facility loading docks"
+      }
+    ],
+    "both_miss": []
+  },
+  "k_sweep": [
+    {
+      "k": 1,
+      "retriever": "dense only",
+      "recall": 0.4666666666666667,
+      "mrr": 0.4666666666666667,
+      "ndcg": 0.4666666666666667
+    },
+    {
+      "k": 1,
+      "retriever": "BM25 only",
+      "recall": 0.9333333333333333,
+      "mrr": 0.9333333333333333,
+      "ndcg": 0.9333333333333333
+    },
+    {
+      "k": 1,
+      "retriever": "hybrid (RRF)",
+      "recall": 0.7333333333333333,
+      "mrr": 0.7333333333333333,
+      "ndcg": 0.7333333333333333
+    },
+    {
+      "k": 3,
+      "retriever": "dense only",
+      "recall": 0.6666666666666666,
+      "mrr": 0.5666666666666667,
+      "ndcg": 0.5928526173809582
+    },
+    {
+      "k": 3,
+      "retriever": "BM25 only",
+      "recall": 1.0,
+      "mrr": 0.9666666666666667,
+      "ndcg": 0.9753953169047639
+    },
+    {
+      "k": 3,
+      "retriever": "hybrid (RRF)",
+      "recall": 0.8666666666666667,
+      "mrr": 0.8,
+      "ndcg": 0.8174573004761944
+    },
+    {
+      "k": 5,
+      "retriever": "dense only",
+      "recall": 0.7333333333333333,
+      "mrr": 0.5888888888888889,
+      "ndcg": 0.6261859507142915
+    },
+    {
+      "k": 5,
+      "retriever": "BM25 only",
+      "recall": 1.0,
+      "mrr": 0.9666666666666667,
+      "ndcg": 0.9753953169047639
+    },
+    {
+      "k": 5,
+      "retriever": "hybrid (RRF)",
+      "recall": 0.8666666666666667,
+      "mrr": 0.8,
+      "ndcg": 0.8174573004761944
+    }
+  ]
+}

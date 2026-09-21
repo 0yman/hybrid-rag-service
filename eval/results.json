@@ -1,0 +1,582 @@
+{
+  "generated_at": "2026-09-21 13:39 UTC",
+  "k": 5,
+  "stats": {
+    "chunks": 459,
+    "documents": 22,
+    "embedder": "sentence-transformers/all-MiniLM-L6-v2",
+    "embedding_dim": 384,
+    "llm_backend": "mock",
+    "reranker": null
+  },
+  "questions": 35,
+  "answerable": 31,
+  "retrieval": {
+    "dense only": {
+      "aggregate": {
+        "hit_rate@5": 1.0,
+        "recall@5": 1.0,
+        "precision@5": 0.21290322580645163,
+        "ndcg@5": 0.9581152087911863,
+        "mrr": 0.9408602150537635
+      },
+      "recall_by_type": {
+        "causal": 1.0,
+        "comparison": 1.0,
+        "conceptual": 1.0,
+        "definition": 1.0,
+        "factoid": 1.0,
+        "numeric": 1.0
+      },
+      "failures": [],
+      "queries": 31
+    },
+    "BM25 only": {
+      "aggregate": {
+        "hit_rate@5": 0.9354838709677419,
+        "recall@5": 0.9354838709677419,
+        "precision@5": 0.2,
+        "ndcg@5": 0.9077120910477731,
+        "mrr": 0.9032258064516129
+      },
+      "recall_by_type": {
+        "causal": 1.0,
+        "comparison": 0.5,
+        "conceptual": 1.0,
+        "definition": 0.875,
+        "factoid": 1.0,
+        "numeric": 1.0
+      },
+      "failures": [
+        {
+          "id": "q01",
+          "question": "What does TEU stand for in shipping?",
+          "expected": [
+            "twenty_foot_equivalent_unit.md"
+          ],
+          "retrieved": [
+            "container_ship.md",
+            "intermodal_container.md",
+            "bill_of_lading.md",
+            "incoterms.md"
+          ]
+        },
+        {
+          "id": "q28",
+          "question": "What is the difference between cargo and freight?",
+          "expected": [
+            "cargo.md"
+          ],
+          "retrieved": [
+            "draft_hull.md",
+            "suez_canal.md",
+            "bill_of_lading.md",
+            "freight_transport.md"
+          ]
+        }
+      ],
+      "queries": 31
+    },
+    "hybrid (RRF)": {
+      "aggregate": {
+        "hit_rate@5": 0.967741935483871,
+        "recall@5": 0.967741935483871,
+        "precision@5": 0.2064516129032258,
+        "ndcg@5": 0.9175303162398071,
+        "mrr": 0.9032258064516129
+      },
+      "recall_by_type": {
+        "causal": 1.0,
+        "comparison": 1.0,
+        "conceptual": 1.0,
+        "definition": 0.875,
+        "factoid": 1.0,
+        "numeric": 1.0
+      },
+      "failures": [
+        {
+          "id": "q01",
+          "question": "What does TEU stand for in shipping?",
+          "expected": [
+            "twenty_foot_equivalent_unit.md"
+          ],
+          "retrieved": [
+            "intermodal_container.md",
+            "containerization.md",
+            "container_ship.md"
+          ]
+        }
+      ],
+      "queries": 31
+    }
+  },
+  "best_retriever": "dense only",
+  "llm_backend": "mock",
+  "complementarity": {
+    "dense_only": [
+      {
+        "id": "q01",
+        "question": "What does TEU stand for in shipping?"
+      },
+      {
+        "id": "q28",
+        "question": "What is the difference between cargo and freight?"
+      }
+    ],
+    "lexical_only": [],
+    "both_miss": []
+  },
+  "k_sweep": [
+    {
+      "k": 1,
+      "retriever": "dense only",
+      "recall": 0.8870967741935484,
+      "mrr": 0.9032258064516129,
+      "ndcg": 0.9032258064516129
+    },
+    {
+      "k": 1,
+      "retriever": "BM25 only",
+      "recall": 0.8387096774193549,
+      "mrr": 0.8709677419354839,
+      "ndcg": 0.8709677419354839
+    },
+    {
+      "k": 1,
+      "retriever": "hybrid (RRF)",
+      "recall": 0.8064516129032258,
+      "mrr": 0.8387096774193549,
+      "ndcg": 0.8387096774193549
+    },
+    {
+      "k": 3,
+      "retriever": "dense only",
+      "recall": 0.9354838709677419,
+      "mrr": 0.9301075268817204,
+      "ndcg": 0.9209887271845046
+    },
+    {
+      "k": 3,
+      "retriever": "BM25 only",
+      "recall": 0.9193548387096774,
+      "mrr": 0.9032258064516129,
+      "ndcg": 0.8991937645131733
+    },
+    {
+      "k": 3,
+      "retriever": "hybrid (RRF)",
+      "recall": 0.967741935483871,
+      "mrr": 0.9032258064516129,
+      "ndcg": 0.9175303162398071
+    },
+    {
+      "k": 5,
+      "retriever": "dense only",
+      "recall": 1.0,
+      "mrr": 0.9408602150537635,
+      "ndcg": 0.9581152087911863
+    },
+    {
+      "k": 5,
+      "retriever": "BM25 only",
+      "recall": 0.9354838709677419,
+      "mrr": 0.9032258064516129,
+      "ndcg": 0.9077120910477731
+    },
+    {
+      "k": 5,
+      "retriever": "hybrid (RRF)",
+      "recall": 0.967741935483871,
+      "mrr": 0.9032258064516129,
+      "ndcg": 0.9175303162398071
+    },
+    {
+      "k": 10,
+      "retriever": "dense only",
+      "recall": 1.0,
+      "mrr": 0.9408602150537635,
+      "ndcg": 0.9581152087911863
+    },
+    {
+      "k": 10,
+      "retriever": "BM25 only",
+      "recall": 0.967741935483871,
+      "mrr": 0.9096774193548387,
+      "ndcg": 0.9201912138617906
+    },
+    {
+      "k": 10,
+      "retriever": "hybrid (RRF)",
+      "recall": 1.0,
+      "mrr": 0.9112903225806451,
+      "ndcg": 0.931423108435723
+    }
+  ],
+  "answers": {
+    "keyword_coverage": 0.7258064516129032,
+    "citation_rate": 0.967741935483871,
+    "abstention_accuracy": 0.9428571428571428,
+    "p50_latency_ms": 0.7861000003686058,
+    "rows": [
+      {
+        "id": "q01",
+        "question": "What does TEU stand for in shipping?",
+        "answerable": true,
+        "abstained": false,
+        "citations": [
+          1
+        ],
+        "answer": "In 2014 the global container fleet grew to a volume of 36.6 million TEU, based on Drewry Shipping Consultants' Container Census. [1] In 2019 it was noted by global logistics data analysis startup Upply that China's role as 'factory of the world' is further incentivizing the use of 40-foot containers, and that the computational standard 1 TEU boxes only make up 20% of units on major east\u2013west liner"
+      },
+      {
+        "id": "q02",
+        "question": "How long is a forty-foot shipping container in metres?",
+        "answerable": true,
+        "abstained": false,
+        "citations": [
+          3,
+          2
+        ],
+        "answer": "Another standard container is slightly more than twice as long: 40-foot (12.19 m), dubbed a forty-foot equivalent unit (often FEU or feu). [3] A twenty-foot equivalent unit is a measure of containerized cargo capacity equal to one standard 20-foot (6.1 m) long container. [2]"
+      },
+      {
+        "id": "q03",
+        "question": "Why is a standard 20-foot container slightly shorter than 20 feet?",
+        "answerable": true,
+        "abstained": false,
+        "citations": [
+          2
+        ],
+        "answer": "Another standard container is slightly more than twice as long: 40-foot (12.19 m), dubbed a forty-foot equivalent unit (often FEU or feu). [2] ## Detailed dimensions: 20-foot and 40-foot containers The standard intermodal container is 19+7\u20448 feet (6.06 m) long and eight feet (2.44 m) wide. [2]"
+      },
+      {
+        "id": "q04",
+        "question": "How long is the Suez Canal?",
+        "answerable": true,
+        "abstained": false,
+        "citations": [
+          1
+        ],
+        "answer": "# Suez Canal The Suez Canal (; Egyptian Arabic: \u0642\u0646\u0627\u0629 \u0627\u0644\u0633\u0648\u064a\u0633, Qan\u0101t as-Suwais) is an artificial sea-level waterway in Egypt, connecting the Mediterranean Sea to the Red Sea through the Isthmus of Suez and dividing Africa and Asia (and by extension, the Sinai Peninsula from the rest of Egypt). [1] The 193.3-kilometre-long (120.1-mile) canal is a key trade route between Europe and Asia. [1]"
+      },
+      {
+        "id": "q05",
+        "question": "Which two harbours make up the Port of Alexandria?",
+        "answerable": true,
+        "abstained": false,
+        "citations": [
+          2,
+          1
+        ],
+        "answer": "Alexander's engineer Dinocrat linked the port of Alexandria and the island of Pharos with a bridge 1200 meters long and 200 meters wide, creating two harbour basins for commercial and military shipping. [2] # Port of Alexandria The Port of Alexandria is located on the northern coast of Egypt, to the West of the Nile Delta. [1]"
+      },
+      {
+        "id": "q06",
+        "question": "Which harbour at the Port of Alexandria is used for commercial shipping?",
+        "answerable": true,
+        "abstained": false,
+        "citations": [
+          2,
+          1
+        ],
+        "answer": "Alexander's engineer Dinocrat linked the port of Alexandria and the island of Pharos with a bridge 1200 meters long and 200 meters wide, creating two harbour basins for commercial and military shipping. [2] The West harbour is used for commercial shipping. [1]"
+      },
+      {
+        "id": "q07",
+        "question": "When were the earliest port facilities at Alexandria built?",
+        "answerable": true,
+        "abstained": false,
+        "citations": [
+          1,
+          2
+        ],
+        "answer": "The earliest port facilities were built in 1900 BC in the then-village of Rhakotis, to service coastal shipping and supply the island of Pharos (now part of the \"Ras al-Tin\" quarter). [1] A new port was built at El-Dekheila during the 1980s with facilities for container shipping and infrastructure to serve the nearby steel factory. [2]"
+      },
+      {
+        "id": "q08",
+        "question": "What is port state control?",
+        "answerable": true,
+        "abstained": false,
+        "citations": [
+          1
+        ],
+        "answer": "# Port state control Port state control (PSC) is an inspection regime for countries to inspect foreign-registered ships in port other than those of the flag state and take action against ships that are not in compliance. [1] To this end, in 1982 fourteen European countries agreed on the Paris Memorandum of Understanding on Port State Control (Paris MoU) to establish port state control. [1]"
+      },
+      {
+        "id": "q09",
+        "question": "In what year was the Paris Memorandum of Understanding on Port State Control agreed?",
+        "answerable": true,
+        "abstained": false,
+        "citations": [
+          1,
+          3
+        ],
+        "answer": "To this end, in 1982 fourteen European countries agreed on the Paris Memorandum of Understanding on Port State Control (Paris MoU) to establish port state control. [1] Memoranda of Understanding (protocols) were signed by some countries unifying Port State Control procedures among the signatories. [3]"
+      },
+      {
+        "id": "q10",
+        "question": "What is demurrage in vessel chartering?",
+        "answerable": true,
+        "abstained": false,
+        "citations": [
+          1
+        ],
+        "answer": "# Demurrage \"Demurrage\" in vessel chartering is the amount of liquidated damages owed by a charterer to a shipowner when the charterer remained in possession of the vessel for the purpose of loading and unloading (laytime) beyond the time allowed by contract. [1] ## Shipping\nIn commercial ship chartering, demurrage is an ancillary cost that represents liquidated damages for delays. [1]"
+      },
+      {
+        "id": "q11",
+        "question": "What is the inverse of demurrage called?",
+        "answerable": true,
+        "abstained": false,
+        "citations": [
+          1
+        ],
+        "answer": "The inverse of demurrage is despatch. [1]"
+      },
+      {
+        "id": "q12",
+        "question": "Who worked with engineer Keith Tantlinger to develop the modern intermodal container?",
+        "answerable": true,
+        "abstained": false,
+        "citations": [
+          1,
+          2
+        ],
+        "answer": "In 1955, former trucking company owner Malcom McLean worked with engineer Keith Tantlinger to develop the modern intermodal container. [1] From 1949 onward, engineer Keith Tantlinger repeatedly contributed to the development of containers, as well as their handling and transportation equipment. [2]"
+      },
+      {
+        "id": "q13",
+        "question": "What was McLean's fundamental insight about the shipping industry?",
+        "answerable": true,
+        "abstained": false,
+        "citations": [
+          1
+        ],
+        "answer": "McLean's \"fundamental insight\" which made the intermodal container possible was that the core business of the shipping industry \"was moving cargo, not sailing ships\". [1] He visualized and helped to bring about a world reoriented around that insight, which required not just standardization of the metal containers themselves, but drastic changes to every aspect of cargo handling. [1]"
+      },
+      {
+        "id": "q14",
+        "question": "What event prompted the first SOLAS treaty and when was it passed?",
+        "answerable": true,
+        "abstained": false,
+        "citations": [
+          1,
+          4
+        ],
+        "answer": "### Origin and early versions\nThe first version of SOLAS Treaty was passed in 1914 in response to the sinking of RMS Titanic, which prescribed numbers of lifeboats and other emergency equipment along with safety procedures, including continuous radio watches. [1] ## History ### Origin and early versions\nThe first version of SOLAS Treaty was passed in 1914 in response to the sinking of RMS Titanic,"
+      },
+      {
+        "id": "q15",
+        "question": "Why did the 1914 SOLAS treaty never enter into force?",
+        "answerable": true,
+        "abstained": false,
+        "citations": [
+          1,
+          2
+        ],
+        "answer": "The 1914 treaty never entered into force due to the outbreak of the First World War. [1] Under SOLAS 1974, amendments enter into force via a tacit acceptance procedure \u2013 this allows an amendment to enter into force on a specified date, unless objections to an amendment are received from an agreed number of parties. [2]"
+      },
+      {
+        "id": "q16",
+        "question": "At which UN conference and in what year was the IMO agreed?",
+        "answerable": true,
+        "abstained": false,
+        "citations": [
+          3,
+          5
+        ],
+        "answer": "The UK then called a ceasefire, and later agreed to withdraw its troops by the end of the year. [3] The IMO participated in the 2015 United Nations Climate Change Conference in Paris seeking to establish itself as the \"appropriate international body to address greenhouse gas emissions from ships engaged in international trade\". [5]"
+      },
+      {
+        "id": "q17",
+        "question": "When did the IMO convention finally come into force?",
+        "answerable": true,
+        "abstained": false,
+        "citations": [
+          1
+        ],
+        "answer": "Under SOLAS 1960, it could take several years for amendments to come into force since countries had to give notice of acceptance to IMO and there was a minimum threshold of countries and tonnage. [1] ### 1960 version\nThe 1960 Convention was adopted on 17 June 1960 and entered into force on 26 May 1965. [1]"
+      },
+      {
+        "id": "q18",
+        "question": "What does the Incoterm EXW mean?",
+        "answerable": true,
+        "abstained": true,
+        "citations": [],
+        "answer": "The indexed documents do not contain enough information to answer this question."
+      },
+      {
+        "id": "q19",
+        "question": "Under EXW terms, who bears the risk of bringing the goods to their final destination?",
+        "answerable": true,
+        "abstained": false,
+        "citations": [
+          1,
+          4
+        ],
+        "answer": "EXW means that a buyer incurs the risks of bringing the goods to their final destination. [1] ### FOB \u2013 Free on Board (named port of shipment) Under FOB terms the seller bears all costs and risks up to the point the goods are loaded on board the vessel. [4]"
+      },
+      {
+        "id": "q20",
+        "question": "In what sense is a bill of lading a document of title?",
+        "answerable": true,
+        "abstained": false,
+        "citations": [
+          1
+        ],
+        "answer": "### As title\nWhen the bill of lading is used as a document of title, it is particularly related to the case of the buyer. [1] When the buyer is entitled to receive goods from the carrier, the bill of lading in this case performs as a document of title for the goods. [1]"
+      },
+      {
+        "id": "q21",
+        "question": "What is the difference between a gantry crane and an overhead crane?",
+        "answerable": true,
+        "abstained": false,
+        "citations": [
+          1
+        ],
+        "answer": "The terms gantry crane and overhead crane (or bridge crane) are often used interchangeably, as both types of crane straddle their workload. [1] # Gantry crane A gantry crane is a crane built atop a gantry, which is a structure used to straddle an object or workspace. [1]"
+      },
+      {
+        "id": "q22",
+        "question": "What cargo is a bulk carrier designed to transport?",
+        "answerable": true,
+        "abstained": false,
+        "citations": [
+          1,
+          2
+        ],
+        "answer": "# Bulk carrier A bulk carrier or bulker is a merchant ship specially designed to transport unpackaged bulk cargo, typically grain, coal, ore, forest products, steel coils, or cement, in its cargo holds. [1] As of 1999, the International Convention for the Safety of Life at Sea defines a bulk carrier as \"a ship constructed with a single deck, top side tanks and hopper side tanks in cargo spaces and"
+      },
+      {
+        "id": "q23",
+        "question": "When was the first specialised bulk carrier built?",
+        "answerable": true,
+        "abstained": false,
+        "citations": [
+          1,
+          2
+        ],
+        "answer": "Since the first specialized bulk carrier was built in 1852, economic forces have led to increased size and sophistication of these ships. [1] The first steam ship recognized as a bulk carrier was the British collier John Bowes, built in 1852. [2]"
+      },
+      {
+        "id": "q24",
+        "question": "What is the draft of a ship and how is it measured?",
+        "answerable": true,
+        "abstained": false,
+        "citations": [
+          1,
+          2
+        ],
+        "answer": "## Ship draft measurements The draft aft (stern) is measured at the perpendicular of the stern. [1] ### Variations\nThe draft of a ship can be affected by multiple factors, besides the variations caused by changes in displacement: Variation by trim\nVariation by list\nVariations in water density due to temperature and salinity\nVariation as a result of a ship moving in shallow waters, or squat\nVariati"
+      },
+      {
+        "id": "q25",
+        "question": "In what unit is container ship capacity measured?",
+        "answerable": true,
+        "abstained": false,
+        "citations": [
+          3,
+          1
+        ],
+        "answer": "Container ship capacity is measured in twenty-foot equivalent units (TEU). [3] ## Equivalence The carrying capacity of a ship is usually measured by mass (the deadweight tonnage) or by volume (the net register tonnage). [1]"
+      },
+      {
+        "id": "q26",
+        "question": "What is an intermodal container and why does it not need unloading between transport modes?",
+        "answerable": true,
+        "abstained": false,
+        "citations": [
+          2,
+          1
+        ],
+        "answer": "# Intermodal container An intermodal container (also known as a shipping container, freight container, or, in US military use, MILVAN) is a large standardized steel container designed and built to carry freight across different modes of transport \u2013 such as from ships to trains to trucks \u2013 without unloading and reloading their cargo. [2] ### Intermodal Multimodal transport featuring containerized c"
+      },
+      {
+        "id": "q27",
+        "question": "How does logistics relate to supply chain management?",
+        "answerable": true,
+        "abstained": false,
+        "citations": [
+          1
+        ],
+        "answer": "# Logistics Logistics is the part of supply chain management that deals with the efficient forward and reverse flow of goods, services, and related information from the point of origin to the point of consumption according to the needs of customers, and a logistician is a professional working in the field of logistics management. [1] Logistics management is a component that holds the supply chain "
+      },
+      {
+        "id": "q28",
+        "question": "What is the difference between cargo and freight?",
+        "answerable": true,
+        "abstained": false,
+        "citations": [
+          1
+        ],
+        "answer": "### Space ### Multimodal Cargo is exchanged between different modes of transportation via transport hubs, also known as transport interchanges or Nodes (e.g. [1] ### Intermodal Multimodal transport featuring containerized cargo (or intermodal container) that is easily transferred between ship, rail, plane and truck. [1]"
+      },
+      {
+        "id": "q29",
+        "question": "What are the three principles of lean manufacturing?",
+        "answerable": true,
+        "abstained": false,
+        "citations": [
+          1
+        ],
+        "answer": "# Just-in-time manufacturing Lean manufacturing is a management system built on three principles: produce only what is needed, when it is needed; correct abnormalities as soon as they occur; and empower workers to improve the process themselves. [1] Where just-in-time (JIT) manufacturing focuses on inventory strategy \u2014 receiving goods only as needed to reduce costs and waste \u2014 Lean goes further by"
+      },
+      {
+        "id": "q30",
+        "question": "Which inland cities are named as examples of ports that reach the sea via rivers or canals?",
+        "answerable": true,
+        "abstained": false,
+        "citations": [
+          1,
+          5
+        ],
+        "answer": "Although usually situated on a sea coast or estuary, ports can also be found far inland, such as Hamburg, Manchester and Duluth; these access the sea via rivers or canals. [1] Such work shifted to so-called \"dry ports\" and gigantic warehouses in rural inland towns, where land and labor were much cheaper than in oceanfront cities. [5]"
+      },
+      {
+        "id": "q31",
+        "question": "What is a warehouse used for and who uses them?",
+        "answerable": true,
+        "abstained": false,
+        "citations": [
+          1
+        ],
+        "answer": "### Storage and shipping systems\nSome of the most common warehouse storage systems are: Pallet racking including selective, drive-in, drive-thru, double-deep, pushback, and gravity flow\nCantilever racking uses arms, rather than pallets, to store long thin objects like timber. [1]"
+      },
+      {
+        "id": "q32",
+        "question": "Who won the 2018 FIFA World Cup final?",
+        "answerable": false,
+        "abstained": true,
+        "citations": [],
+        "answer": "The indexed documents do not contain enough information to answer this question."
+      },
+      {
+        "id": "q33",
+        "question": "What is the recommended first-line treatment for type 2 diabetes?",
+        "answerable": false,
+        "abstained": true,
+        "citations": [],
+        "answer": "The indexed documents do not contain enough information to answer this question."
+      },
+      {
+        "id": "q34",
+        "question": "How do I make a sourdough starter from scratch?",
+        "answerable": false,
+        "abstained": true,
+        "citations": [],
+        "answer": "The indexed documents do not contain enough information to answer this question."
+      },
+      {
+        "id": "q35",
+        "question": "What is the time complexity of quicksort in the average case?",
+        "answerable": false,
+        "abstained": false,
+        "citations": [
+          1,
+          5
+        ],
+        "answer": "A study of mini-bulk carriers found that it takes, on average, twice as much time to unload a ship as it does to load it. [1] In 2021, the average time to unload a container in Asia was 27 seconds, the average time in Northern Europe was 46 seconds, and the average time in North America was 76 seconds. [5]"
+      }
+    ]
+  }
+}

@@ -1,0 +1,31 @@
+[project]
+name = "hybrid-rag-service"
+version = "1.0.0"
+description = "Retrieval-augmented QA with hybrid dense+BM25 retrieval, citations, abstention and a real evaluation harness"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "eval", "scripts", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "C4", "SIM"]
+ignore = [
+    "E501",   # line length is handled by the formatter, not the linter
+    "B008",   # FastAPI's Depends() in defaults is the documented pattern
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["E402"]   # sys.path is set up in conftest before the rag imports
+"eval/*" = ["E402"]
+"scripts/*" = ["E402"]

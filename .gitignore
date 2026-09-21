@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+
+# The FAISS index is a build artefact - rebuild with scripts/ingest.py.
+# data/corpus/ IS committed, so the evaluation numbers are reproducible
+# from a clean clone rather than depending on what Wikipedia says today.
+data/index/

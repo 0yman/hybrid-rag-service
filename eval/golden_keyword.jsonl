@@ -1,0 +1,15 @@
+{"id": "k01", "type": "acronyms", "question": "MARPOL STCW MLC conventions", "relevant_sources": ["port_state_control.md"], "answer_keywords": ["MARPOL"], "answerable": true}
+{"id": "k02", "type": "technical_term", "question": "twistlocks 3 inches gap 40-foot", "relevant_sources": ["twenty_foot_equivalent_unit.md"], "answer_keywords": ["twistlocks"], "answerable": true}
+{"id": "k03", "type": "rare_proper_noun", "question": "Rhakotis Pharos 1900 BC", "relevant_sources": ["port_of_alexandria.md"], "answer_keywords": ["Rhakotis"], "answerable": true}
+{"id": "k04", "type": "rare_proper_noun", "question": "Keith Tantlinger", "relevant_sources": ["containerization.md"], "answer_keywords": ["Tantlinger"], "answerable": true}
+{"id": "k05", "type": "code_and_year", "question": "Paris MoU 1982", "relevant_sources": ["port_state_control.md"], "answer_keywords": ["Paris"], "answerable": true}
+{"id": "k06", "type": "code", "question": "EXW named place of delivery", "relevant_sources": ["incoterms.md"], "answer_keywords": ["EXW"], "answerable": true}
+{"id": "k07", "type": "rare_proper_noun", "question": "Amoco Cadiz 1978", "relevant_sources": ["port_state_control.md"], "answer_keywords": ["Amoco Cadiz"], "answerable": true}
+{"id": "k08", "type": "rare_proper_noun", "question": "RMS Titanic lifeboats 1914", "relevant_sources": ["solas_convention.md"], "answer_keywords": ["Titanic"], "answerable": true}
+{"id": "k09", "type": "technical_term", "question": "despatch laytime charterparty", "relevant_sources": ["demurrage.md"], "answer_keywords": ["despatch"], "answerable": true}
+{"id": "k10", "type": "technical_term", "question": "nemo dat rule", "relevant_sources": ["bill_of_lading.md"], "answer_keywords": ["nemo dat"], "answerable": true}
+{"id": "k11", "type": "technical_term", "question": "under keel clearance", "relevant_sources": ["draft_hull.md"], "answer_keywords": ["under keel clearance"], "answerable": true}
+{"id": "k12", "type": "technical_term", "question": "portal cranes straddle", "relevant_sources": ["gantry_crane.md"], "answer_keywords": ["portal"], "answerable": true}
+{"id": "k13", "type": "code_and_year", "question": "1852 first specialized bulk carrier", "relevant_sources": ["bulk_carrier.md"], "answer_keywords": ["1852"], "answerable": true}
+{"id": "k14", "type": "rare_proper_noun", "question": "Hamburg Manchester Duluth inland ports", "relevant_sources": ["port.md"], "answer_keywords": ["Duluth"], "answerable": true}
+{"id": "k15", "type": "technical_term", "question": "slotted facility loading docks", "relevant_sources": ["warehouse.md"], "answer_keywords": ["slotted"], "answerable": true}
