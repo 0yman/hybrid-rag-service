@@ -112,9 +112,19 @@ class GeminiEmbedder(Embedder):
 
     def __init__(self, settings: Settings, dim: int = 768) -> None:
         from google import genai
+        from google.genai import types
 
         self._settings = settings
-        self._client = genai.Client(api_key=settings.require_api_key())
+        self._client = genai.Client(
+            api_key=settings.require_api_key(),
+            # One retry layer only. The SDK retries internally by default,
+            # which would compose with the backoff below into 25 attempts
+            # and a request that looks like a hang.
+            http_options=types.HttpOptions(
+                timeout=settings.request_timeout_ms,
+                retry_options=types.HttpRetryOptions(attempts=1),
+            ),
+        )
         self._model = settings.gemini_embedding_model
         self.dim = dim
         self.name = f"{self._model}-{dim}"

@@ -26,13 +26,15 @@ class Settings(BaseSettings):
     embedding_backend: EmbeddingBackend = "local"
     llm_backend: LLMBackend = "gemini"
     gemini_embedding_model: str = "gemini-embedding-001"
-    gemini_chat_model: str = "gemini-2.5-flash"
+    gemini_chat_model: str = "gemini-3.6-flash"
     local_embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
 
     # Gemini's free tier allows ~15 requests/minute; batch and pace accordingly.
     embed_batch_size: int = 32
     max_retries: int = 5
     retry_base_delay: float = 2.0
+    # Per-request HTTP timeout in milliseconds, passed to the SDK.
+    request_timeout_ms: int = 60_000
 
     # --- chunking --------------------------------------------------------
     chunk_size: int = 220          # words, not characters
