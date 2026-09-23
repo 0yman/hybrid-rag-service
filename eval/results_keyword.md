@@ -4,7 +4,7 @@
 - Embeddings: `fastembed:sentence-transformers/all-MiniLM-L6-v2` (384d)
 - Questions: **15** (15 answerable, 0 out-of-domain)
 - Retrieval depth: k = 3
-- Generated: 2026-09-23 16:35 UTC
+- Generated: 2026-09-23 19:39 UTC
 
 ## Retrieval
 
@@ -12,7 +12,7 @@
 |---|---|---|---|---|---|
 | dense only | 0.800 | 0.800 | 0.267 | 0.717 | 0.689 |
 | BM25 only | 1.000 | 1.000 | 0.333 | 0.975 | 0.967 |
-| hybrid (RRF) | 0.933 | 0.933 | 0.311 | 0.835 | 0.800 |
+| hybrid (RRF) | 0.867 | 0.867 | 0.289 | 0.793 | 0.767 |
 
 ### Recall by question type (best retriever)
 
@@ -37,10 +37,10 @@ A single k flatters whichever retriever happens to saturate there.
 | 1 | hybrid (RRF) | 0.667 | 0.667 | 0.667 |
 | 3 | dense only | 0.800 | 0.689 | 0.717 |
 | 3 | BM25 only | 1.000 | 0.967 | 0.975 |
-| 3 | hybrid (RRF) | 0.933 | 0.800 | 0.835 |
+| 3 | hybrid (RRF) | 0.867 | 0.767 | 0.793 |
 | 5 | dense only | 0.800 | 0.689 | 0.717 |
 | 5 | BM25 only | 1.000 | 0.967 | 0.975 |
-| 5 | hybrid (RRF) | 1.000 | 0.833 | 0.877 |
+| 5 | hybrid (RRF) | 1.000 | 0.822 | 0.868 |
 
 ## Retriever complementarity (k = 3)
 

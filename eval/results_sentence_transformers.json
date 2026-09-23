@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-23 16:36 UTC",
+  "generated_at": "2026-09-23 19:40 UTC",
   "k": 5,
   "stats": {
     "chunks": 459,
@@ -216,7 +216,7 @@
     "keyword_coverage": 0.8225806451612904,
     "citation_rate": 1.0,
     "abstention_accuracy": 1.0,
-    "p50_latency_ms": 203.06239999990794,
+    "p50_latency_ms": 208.01899999787565,
     "rows": [
       {
         "id": "q01",

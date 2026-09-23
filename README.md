@@ -139,7 +139,7 @@ uploads folder. Re-uploading a file updates it instead of duplicating it.
 <details>
 <summary><b>Tests</b></summary>
 
-157 tests, no network, no API key, a few seconds:
+161 tests, no network, no API key, a few seconds:
 
 ```bash
 pip install -r requirements-dev.txt
@@ -183,7 +183,7 @@ Recall@3, under both runtimes that can load the embedding model (see below):
 |---|---|---|---|---|
 | Dense only | 0.952 | 0.800 | 0.935 | **0.667** |
 | BM25 only | 0.919 | **1.000** | 0.919 | **1.000** |
-| Hybrid (RRF) | **0.968** | **0.933** | **0.968** | 0.867 |
+| Hybrid (RRF) | **0.968** | 0.867 | **0.968** | 0.867 |
 
 Full tables with MRR, nDCG and a k-sweep: [`eval/results.md`](eval/results.md),
 [`eval/results_keyword.md`](eval/results_keyword.md), and the
@@ -193,7 +193,9 @@ Full tables with MRR, nDCG and a k-sweep: [`eval/results.md`](eval/results.md),
 to 0.667 or 0.800 — exactly where BM25 is perfect. Its misses are the ones you
 would predict: rare proper nouns and acronym strings (`MARPOL STCW MLC`,
 `Rhakotis Pharos 1900 BC`). That is the case for keeping a lexical retriever
-at all.
+at all. And at k=3, BM25 alone has the best worst case (0.919) under either
+runtime: fusion helps natural questions but inherits some of dense retrieval's
+blind spot on keyword ones.
 
 ### The runtime changed the conclusion
 
@@ -208,17 +210,28 @@ cosine similarity of only ~0.88 on average (0.69 at worst) — short, clean test
 sentences agree almost perfectly, which is exactly why a quick check missed
 it. The evaluation caught it, and the effect was not small:
 
-- dense recall on keyword queries moved **13 points** (0.667 → 0.800);
-- which retriever is safest flipped. Under sentence-transformers, BM25 alone
-  had the best worst case at k=3 (0.919 vs hybrid's 0.867), and at k=5 plain
-  dense retrieval beat hybrid on natural questions (1.000 vs 0.968). Under
-  fastembed, hybrid has the best worst case (0.933), and at k=5 it reaches
-  1.000 on both sets.
+- dense recall on keyword queries at k=3 moved **13 points** (0.667 → 0.800);
+- at k=5, which retriever is safest flipped: under sentence-transformers BM25
+  alone has the best worst case (0.935 vs hybrid's 0.867); under fastembed,
+  hybrid reaches **1.000 on both sets**.
 
 So both are reported, the runtime is part of the embedder's name recorded in
 the index (an index built by one is refused by the other, rather than searched
 with vectors from a different space), and fastembed is the default because it
 is what someone installing the app actually gets.
+
+### The folder you cloned into changed the score
+
+CI then disagreed with my laptop: keyword recall@3 for hybrid was 0.867 in CI
+and 0.933 locally, with identical code. Dense and BM25 matched exactly; only
+the fused ranking differed, on one query. The cause: when two passages tie on
+rank-fusion score, the tie is broken by passage id — and ids were hashes of
+each file's *absolute path*, `C:\Users\...` on one machine and `/home/runner/...`
+on the other. Ids now come from the path relative to the indexed folder, a
+test moves a corpus and asserts the ranking does not change, and the honest
+number is the one that reproduces anywhere: 0.867. (That query sits on an
+exact tie, which is itself worth knowing — at this corpus size, one tie is
+6.7 points of recall.)
 
 ### Answers
 

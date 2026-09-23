@@ -76,7 +76,7 @@ jobs:
           # fail a build but a real regression does.
           CHECKS = [
               ("/tmp/results.json", "hybrid (RRF)", 0.95),          # natural language, recall@5
-              ("/tmp/results_keyword.json", "hybrid (RRF)", 0.90),  # keyword queries, recall@3
+              ("/tmp/results_keyword.json", "hybrid (RRF)", 0.85),  # keyword queries, recall@3
           ]
           failed = False
           for path, retriever, floor in CHECKS:

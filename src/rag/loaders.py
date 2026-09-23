@@ -16,8 +16,15 @@ from .models import Document
 SUPPORTED_SUFFIXES = {".txt", ".md", ".markdown", ".pdf"}
 
 
-def _doc_id(path: Path) -> str:
-    return hashlib.sha1(str(path.resolve()).encode()).hexdigest()[:12]
+def _doc_id(key: str) -> str:
+    """A stable id from a *location-independent* key.
+
+    This used to hash the absolute path, which made results depend on where
+    the project was cloned: chunk ids break ties in rank fusion, so the same
+    benchmark scored 0.933 in one folder and 0.867 in another. The key is now
+    the path relative to the folder being indexed (or just the file name).
+    """
+    return hashlib.sha1(key.encode()).hexdigest()[:12]
 
 
 def _title_from(path: Path, text: str) -> str:
@@ -93,7 +100,10 @@ def reflow_pdf_text(text: str) -> str:
     return "\n\n".join(block.replace("\n ", "\n") for block in out)
 
 
-def load_file(path: Path) -> Document | None:
+def load_file(path: Path, root: Path | None = None) -> Document | None:
+    """Read one file. `root` is the folder it was found under, if any; its
+    path relative to that folder identifies it, so the same file keeps the
+    same id wherever the folder lives - and re-adding it replaces it."""
     suffix = path.suffix.lower()
     if suffix not in SUPPORTED_SUFFIXES:
         return None
@@ -103,8 +113,9 @@ def load_file(path: Path) -> Document | None:
     if not text.strip():
         return None
 
+    key = path.relative_to(root).as_posix() if root is not None else path.name
     return Document(
-        doc_id=_doc_id(path),
+        doc_id=_doc_id(key),
         title=_title_from(path, text),
         text=text,
         source=path.name,
@@ -127,6 +138,6 @@ def load_directory(directory: Path, patterns: Iterable[str] = ("**/*",)) -> Iter
             if not path.is_file() or str(path) in seen:
                 continue
             seen.add(str(path))
-            doc = load_file(path)
+            doc = load_file(path, root=directory)
             if doc is not None:
                 yield doc

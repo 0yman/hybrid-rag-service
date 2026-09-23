@@ -4,7 +4,7 @@
 - Embeddings: `sentence-transformers:sentence-transformers/all-MiniLM-L6-v2` (384d)
 - Questions: **15** (15 answerable, 0 out-of-domain)
 - Retrieval depth: k = 3
-- Generated: 2026-09-23 16:36 UTC
+- Generated: 2026-09-23 19:40 UTC
 
 ## Retrieval
 

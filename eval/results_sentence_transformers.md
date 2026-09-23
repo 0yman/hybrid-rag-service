@@ -4,7 +4,7 @@
 - Embeddings: `sentence-transformers:sentence-transformers/all-MiniLM-L6-v2` (384d)
 - Questions: **35** (31 answerable, 4 out-of-domain)
 - Retrieval depth: k = 5
-- Generated: 2026-09-23 16:36 UTC
+- Generated: 2026-09-23 19:40 UTC
 
 ## Retrieval
 
@@ -64,4 +64,4 @@ A single k flatters whichever retriever happens to saturate there.
 - Keyword coverage: **0.823**
 - Citation rate: **1.000**
 - Abstention accuracy: **1.000**
-- p50 latency: 203 ms
+- p50 latency: 208 ms
