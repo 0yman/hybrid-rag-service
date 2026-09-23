@@ -1,19 +1,19 @@
 services:
-  rag:
+  app:
     build: .
-    image: hybrid-rag-service:latest
+    image: ask-your-documents:latest
     ports:
       - "8000:8000"
-    environment:
-      # The image is built with a local index, so it serves with no key set.
-      # Add GOOGLE_API_KEY and switch the backend to get real generated answers.
-      RAG_EMBEDDING_BACKEND: local
-      RAG_LLM_BACKEND: ${RAG_LLM_BACKEND:-mock}
-      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
+    env_file:
+      # Optional. Without it, answers quote your documents directly.
+      - path: .env
+        required: false
     volumes:
-      # Persist the index across restarts and let /ingest survive a rebuild.
-      - rag-index:/app/data/index
+      # Your documents and their index survive restarts and rebuilds.
+      - documents:/app/data/index
+      - uploads:/app/data/uploads
     restart: unless-stopped
 
 volumes:
-  rag-index:
+  documents:
+  uploads:

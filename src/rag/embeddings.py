@@ -1,10 +1,12 @@
 """Embedding backends behind one interface.
 
-Three implementations, picked by config:
+Picked by config:
 
+* ``local``  - a small model run on this machine (the default). No key, and
+  no network after the first download.
 * ``gemini`` - Google's hosted ``gemini-embedding-001``. Free tier, but rate
   limited, so calls are batched and retried with exponential backoff.
-* ``local``  - a sentence-transformers model. No network, no quota.
+* ``openai`` - any OpenAI-format embeddings endpoint.
 * ``hash``   - a deterministic hashing vectoriser. No model download at all,
   which is what keeps CI fast and offline.
 
@@ -24,10 +26,17 @@ from abc import ABC, abstractmethod
 import numpy as np
 
 from .config import Settings
+from .providers import import_genai, import_openai
 
 logger = logging.getLogger(__name__)
 
 _TOKEN = re.compile(r"[a-z0-9]+")
+
+
+def _installed(module: str) -> bool:
+    import importlib.util
+
+    return importlib.util.find_spec(module) is not None
 
 
 def l2_normalize(matrix: np.ndarray) -> np.ndarray:
@@ -46,6 +55,10 @@ class Embedder(ABC):
 
     dim: int
     name: str
+    #: Whether similarity between these vectors tracks meaning. False only for
+    #: the hashing stub, whose cosine is closer to word overlap - anything that
+    #: reasons about "how close in meaning" has to know the difference.
+    semantic: bool = True
 
     @abstractmethod
     def embed_documents(self, texts: list[str]) -> np.ndarray: ...
@@ -60,6 +73,8 @@ class HashEmbedder(Embedder):
     Deterministic and dependency-free. It has no semantic understanding, so it
     is for tests and CI - never for a real index.
     """
+
+    semantic = False
 
     def __init__(self, dim: int = 512) -> None:
         self.dim = dim
@@ -86,37 +101,87 @@ class HashEmbedder(Embedder):
 
 
 class LocalEmbedder(Embedder):
-    """sentence-transformers, loaded lazily so importing this module is cheap."""
+    """A small embedding model run on this machine. No key, no network after
+    the first download.
 
-    def __init__(self, model_name: str) -> None:
-        from sentence_transformers import SentenceTransformer
+    Two runtimes can load it:
 
+    * ``fastembed`` (ONNX Runtime) - the default. About 15 MB installed.
+    * ``sentence-transformers`` (PyTorch) - used only if fastembed is missing
+      or asked for. On Linux, a plain ``pip install`` of PyTorch pulls the
+      CUDA build, which is gigabytes - enough to lose someone who just wanted
+      to try the app, which is why it is not a default dependency.
+
+    **They do not produce the same vectors**, despite loading a model with the
+    same name. On real document chunks the two agree to a cosine similarity of
+    about 0.88 on average and as little as 0.69 on some chunks - short, clean
+    sentences agree almost perfectly, which is exactly what makes the
+    difference easy to miss. So the runtime is part of the embedder's `name`:
+    an index built by one is refused by the other and has to be rebuilt,
+    rather than searched with vectors from a different space.
+    """
+
+    def __init__(self, model_name: str, engine: str = "auto") -> None:
+        if engine == "auto":
+            engine = "fastembed" if _installed("fastembed") else "sentence-transformers"
+        if engine == "fastembed":
+            self._init_fastembed(model_name)
+        elif engine == "sentence-transformers":
+            self._init_sentence_transformers(model_name)
+        else:
+            raise ValueError(f"Unknown local embedding engine: {engine!r}")
+        self.name = f"{self._engine}:{model_name}"
+
+    def _init_fastembed(self, model_name: str) -> None:
+        try:
+            from fastembed import TextEmbedding
+        except ImportError as exc:
+            raise RuntimeError("fastembed is not installed: `pip install fastembed`.") from exc
+        self._engine = "fastembed"
+        self._model = TextEmbedding(model_name)
+        self.dim = int(len(next(iter(self._model.embed(["dimension probe"])))))
+
+    def _init_sentence_transformers(self, model_name: str) -> None:
+        try:
+            from sentence_transformers import SentenceTransformer
+        except ImportError as exc:
+            raise RuntimeError(
+                "No local embedding engine is installed. Run "
+                "`pip install fastembed` (small), or set "
+                "RAG_EMBEDDING_BACKEND=gemini / openai to use a hosted one."
+            ) from exc
+        self._engine = "sentence-transformers"
         self._model = SentenceTransformer(model_name)
         # Renamed in sentence-transformers 5.x; keep working on older versions.
         get_dim = getattr(
             self._model, "get_embedding_dimension", None
         ) or self._model.get_sentence_embedding_dimension
         self.dim = int(get_dim())
-        self.name = model_name
+
+    def _encode(self, texts: list[str]) -> np.ndarray:
+        if self._engine == "fastembed":
+            return np.asarray(list(self._model.embed(texts, batch_size=32)))
+        return np.asarray(self._model.encode(texts, batch_size=32, show_progress_bar=False))
 
     def embed_documents(self, texts: list[str]) -> np.ndarray:
-        vectors = self._model.encode(texts, batch_size=32, show_progress_bar=False)
-        return l2_normalize(np.asarray(vectors))
+        return l2_normalize(self._encode(texts))
 
     def embed_query(self, text: str) -> np.ndarray:
-        return l2_normalize(np.asarray(self._model.encode([text])))[0]
+        return l2_normalize(self._encode([text]))[0]
 
 
 class GeminiEmbedder(Embedder):
     """Hosted embeddings with batching and 429-aware retries."""
 
     def __init__(self, settings: Settings, dim: int = 768) -> None:
-        from google import genai
-        from google.genai import types
+        # The key first: someone without one needs to hear about the key, not
+        # about a package they would only need once they had one.
+        api_key = settings.require_api_key()
+        genai, types = import_genai()
 
         self._settings = settings
         self._client = genai.Client(
-            api_key=settings.require_api_key(),
+            api_key=api_key,
             # One retry layer only. The SDK retries internally by default,
             # which would compose with the backoff below into 25 attempts
             # and a request that looks like a hang.
@@ -180,11 +245,12 @@ class OpenAIEmbedder(Embedder):
     """
 
     def __init__(self, settings: Settings) -> None:
-        from openai import OpenAI
+        api_key = settings.require_openai_key()  # before the import; see GeminiLLM
+        OpenAI = import_openai()  # noqa: N806 - it is a class
 
         self._settings = settings
         self._client = OpenAI(
-            api_key=settings.require_openai_key(),
+            api_key=api_key,
             base_url=settings.openai_base_url or None,
             timeout=settings.request_timeout_ms / 1000,
             max_retries=0,
@@ -241,7 +307,7 @@ def get_embedder(settings: Settings) -> Embedder:
     if backend == "openai":
         return OpenAIEmbedder(settings)
     if backend == "local":
-        return LocalEmbedder(settings.local_embedding_model)
+        return LocalEmbedder(settings.local_embedding_model, settings.local_embedding_engine)
     if backend == "hash":
         return HashEmbedder()
     raise ValueError(f"Unknown embedding backend: {backend!r}")

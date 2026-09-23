@@ -1,8 +1,12 @@
-"""Download the demo corpus: Wikipedia articles on shipping and port logistics.
+"""Download the benchmark corpus: Wikipedia articles on shipping and logistics.
+
+This is the fixed document set the evaluation questions in eval/ were written
+against, and the "sample documents" the web app offers. It is already
+committed in data/benchmark/, so you only need this to refresh it.
 
 Wikipedia is used because the text is real, freely licensed (CC BY-SA 4.0) and
-stable enough that the evaluation set stays valid. The pipeline itself is
-domain agnostic - point `scripts/ingest.py` at any folder of .txt/.md/.pdf.
+stable enough that the evaluation set stays valid. The app itself works on any
+documents you give it.
 
     python scripts/fetch_corpus.py
 """
@@ -18,7 +22,7 @@ from pathlib import Path
 import httpx
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_OUT = REPO_ROOT / "data" / "corpus"
+DEFAULT_OUT = REPO_ROOT / "data" / "benchmark"
 API = "https://en.wikipedia.org/w/api.php"
 USER_AGENT = (
     "hybrid-rag-service/1.0 "

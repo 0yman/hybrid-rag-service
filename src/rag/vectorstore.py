@@ -51,6 +51,32 @@ class VectorStore:
         self._index.add(vectors)
         self._chunks.extend(chunks)
 
+    def remove_document(self, doc_id: str) -> int:
+        """Drop every chunk of one document. Returns how many were removed.
+
+        A flat FAISS index has no cheap delete, so the index is rebuilt from
+        the vectors it already holds - `reconstruct_n` reads them back out.
+        That is the point: removing a file costs a copy of floats, not
+        re-embedding the whole library, which with a local model can take
+        minutes.
+        """
+        keep = [i for i, chunk in enumerate(self._chunks) if chunk.doc_id != doc_id]
+        removed = len(self._chunks) - len(keep)
+        if removed == 0:
+            return 0
+
+        rebuilt = faiss.IndexFlatIP(self.dim)
+        if keep:
+            vectors = self._index.reconstruct_n(0, self._index.ntotal)
+            rebuilt.add(np.ascontiguousarray(vectors[keep], dtype=np.float32))
+        self._index = rebuilt
+        self._chunks = [self._chunks[i] for i in keep]
+        return removed
+
+    def clear(self) -> None:
+        self._index = faiss.IndexFlatIP(self.dim)
+        self._chunks = []
+
     def search(self, query_vector: np.ndarray, top_k: int) -> list[ScoredChunk]:
         if not self._chunks:
             return []

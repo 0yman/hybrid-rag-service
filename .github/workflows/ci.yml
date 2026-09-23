@@ -21,26 +21,30 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
-          cache-dependency-path: requirements-dev.txt
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
 
-      # The suite runs on the hash embedder and the mock LLM, so it needs
-      # neither an API key nor a model download. Installing the heavy
-      # providers would triple CI time for no extra coverage.
-      - name: Install test dependencies
+      # Install exactly what a user installs. An earlier version of this job
+      # hand-picked a smaller set to save a minute, and so missed that the
+      # provider SDKs the tests exercise were not in it - CI went red on a
+      # commit that a real install would have handled fine.
+      - name: Install
         run: |
           python -m pip install --upgrade pip
-          pip install numpy faiss-cpu rank-bm25 pydantic pydantic-settings \
-                      fastapi "uvicorn[standard]" httpx pytest ruff
+          pip install -r requirements-dev.txt
 
       - name: Lint
-        run: ruff check src eval scripts tests
+        run: ruff check src eval scripts tests app.py
 
+      # The suite uses the hashing embedder and the extractive engine: no model
+      # download, no network, no API key.
       - name: Test
         run: python -m pytest -q
 
   evaluate:
-    # Reruns the retrieval evaluation on the committed corpus so a change that
-    # quietly degrades recall shows up in the PR instead of in production.
+    # Re-runs the retrieval evaluation on the committed benchmark corpus, so a
+    # change that quietly degrades recall shows up in the pull request.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -56,44 +60,43 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Build index
-        run: python scripts/ingest.py --embedding-backend local
-
-      - name: Evaluate both query sets
+      - name: Evaluate both query sets (default runtime)
         run: |
           python eval/run_eval.py --ablate --k-sweep 1,3,5,10 --generate \
-            --llm-backend mock
-          python eval/run_eval.py --ablate -k 3 \
-            --golden eval/golden_keyword.jsonl \
-            --out eval/results_keyword.md --json-out eval/results_keyword.json
+            --out /tmp/results.md --json-out /tmp/results.json
+          python eval/run_eval.py --ablate -k 3 --golden eval/golden_keyword.jsonl \
+            --out /tmp/results_keyword.md --json-out /tmp/results_keyword.json
 
-      - name: Check retrieval has not regressed
+      - name: Check retrieval and answers have not regressed
         run: |
           python - <<'PY'
           import json, sys
 
-          THRESHOLDS = {
-              "eval/results.json": 0.90,          # natural-language questions
-              "eval/results_keyword.json": 0.80,  # keyword / exact-token queries
-          }
+          # Floors a little under the committed numbers, so noise does not
+          # fail a build but a real regression does.
+          CHECKS = [
+              ("/tmp/results.json", "hybrid (RRF)", 0.95),          # natural language, recall@5
+              ("/tmp/results_keyword.json", "hybrid (RRF)", 0.90),  # keyword queries, recall@3
+          ]
           failed = False
-          for path, floor in THRESHOLDS.items():
+          for path, retriever, floor in CHECKS:
               report = json.load(open(path))
               k = report["k"]
-              best = max(
-                  r["aggregate"][f"recall@{k}"] for r in report["retrieval"].values()
-              )
-              status = "ok" if best >= floor else "REGRESSED"
-              print(f"{status}: {path} best recall@{k}={best:.3f} (floor {floor})")
-              failed |= best < floor
+              value = report["retrieval"][retriever]["aggregate"][f"recall@{k}"]
+              ok = value >= floor
+              print(f"{'ok' if ok else 'REGRESSED'}: {path} {retriever} recall@{k}={value:.3f} (floor {floor})")
+              failed |= not ok
+
+          answers = json.load(open("/tmp/results.json"))["answers"]
+          for metric, floor in [("abstention_accuracy", 0.95), ("citation_rate", 0.95)]:
+              ok = answers[metric] >= floor
+              print(f"{'ok' if ok else 'REGRESSED'}: {metric}={answers[metric]:.3f} (floor {floor})")
+              failed |= not ok
           sys.exit(1 if failed else 0)
           PY
 
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: evaluation-results
-          path: |
-            eval/results.md
-            eval/results.json
-            eval/results_keyword.md
-            eval/results_keyword.json
+          path: /tmp/results*

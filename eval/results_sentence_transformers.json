@@ -1,10 +1,10 @@
 {
-  "generated_at": "2026-09-23 16:35 UTC",
+  "generated_at": "2026-09-23 16:36 UTC",
   "k": 5,
   "stats": {
     "chunks": 459,
     "documents": 22,
-    "embedder": "fastembed:sentence-transformers/all-MiniLM-L6-v2",
+    "embedder": "sentence-transformers:sentence-transformers/all-MiniLM-L6-v2",
     "embedding_dim": 384,
     "llm_backend": "extractive",
     "reranker": null
@@ -15,17 +15,17 @@
     "dense only": {
       "aggregate": {
         "hit_rate@5": 1.0,
-        "recall@5": 0.9838709677419355,
-        "precision@5": 0.2064516129032258,
-        "ndcg@5": 0.9475808612873668,
-        "mrr": 0.9462365591397849
+        "recall@5": 1.0,
+        "precision@5": 0.21290322580645163,
+        "ndcg@5": 0.9581152087911863,
+        "mrr": 0.9408602150537635
       },
       "recall_by_type": {
         "causal": 1.0,
         "comparison": 1.0,
         "conceptual": 1.0,
         "definition": 1.0,
-        "factoid": 0.9166666666666666,
+        "factoid": 1.0,
         "numeric": 1.0
       },
       "failures": [],
@@ -79,25 +79,38 @@
     },
     "hybrid (RRF)": {
       "aggregate": {
-        "hit_rate@5": 1.0,
-        "recall@5": 1.0,
-        "precision@5": 0.21290322580645163,
-        "ndcg@5": 0.9552340920762741,
-        "mrr": 0.9435483870967742
+        "hit_rate@5": 0.967741935483871,
+        "recall@5": 0.967741935483871,
+        "precision@5": 0.2064516129032258,
+        "ndcg@5": 0.9175303162398071,
+        "mrr": 0.9032258064516129
       },
       "recall_by_type": {
         "causal": 1.0,
         "comparison": 1.0,
         "conceptual": 1.0,
-        "definition": 1.0,
+        "definition": 0.875,
         "factoid": 1.0,
         "numeric": 1.0
       },
-      "failures": [],
+      "failures": [
+        {
+          "id": "q01",
+          "question": "What does TEU stand for in shipping?",
+          "expected": [
+            "twenty_foot_equivalent_unit.md"
+          ],
+          "retrieved": [
+            "intermodal_container.md",
+            "containerization.md",
+            "container_ship.md"
+          ]
+        }
+      ],
       "queries": 31
     }
   },
-  "best_retriever": "hybrid (RRF)",
+  "best_retriever": "dense only",
   "llm_backend": "extractive",
   "complementarity": {
     "dense_only": [
@@ -117,7 +130,7 @@
     {
       "k": 1,
       "retriever": "dense only",
-      "recall": 0.8709677419354839,
+      "recall": 0.8870967741935484,
       "mrr": 0.9032258064516129,
       "ndcg": 0.9032258064516129
     },
@@ -131,16 +144,16 @@
     {
       "k": 1,
       "retriever": "hybrid (RRF)",
-      "recall": 0.8709677419354839,
-      "mrr": 0.9032258064516129,
-      "ndcg": 0.9032258064516129
+      "recall": 0.8064516129032258,
+      "mrr": 0.8387096774193549,
+      "ndcg": 0.8387096774193549
     },
     {
       "k": 3,
       "retriever": "dense only",
-      "recall": 0.9516129032258065,
-      "mrr": 0.9354838709677419,
-      "ndcg": 0.9314518290293023
+      "recall": 0.9354838709677419,
+      "mrr": 0.9301075268817204,
+      "ndcg": 0.9209887271845046
     },
     {
       "k": 3,
@@ -153,15 +166,15 @@
       "k": 3,
       "retriever": "hybrid (RRF)",
       "recall": 0.967741935483871,
-      "mrr": 0.9354838709677419,
-      "ndcg": 0.9413412998803581
+      "mrr": 0.9032258064516129,
+      "ndcg": 0.9175303162398071
     },
     {
       "k": 5,
       "retriever": "dense only",
-      "recall": 0.9838709677419355,
-      "mrr": 0.9462365591397849,
-      "ndcg": 0.9475808612873668
+      "recall": 1.0,
+      "mrr": 0.9408602150537635,
+      "ndcg": 0.9581152087911863
     },
     {
       "k": 5,
@@ -173,16 +186,16 @@
     {
       "k": 5,
       "retriever": "hybrid (RRF)",
-      "recall": 1.0,
-      "mrr": 0.9435483870967742,
-      "ndcg": 0.9552340920762741
+      "recall": 0.967741935483871,
+      "mrr": 0.9032258064516129,
+      "ndcg": 0.9175303162398071
     },
     {
       "k": 10,
       "retriever": "dense only",
       "recall": 1.0,
-      "mrr": 0.9462365591397849,
-      "ndcg": 0.9560991878219666
+      "mrr": 0.9408602150537635,
+      "ndcg": 0.9581152087911863
     },
     {
       "k": 10,
@@ -195,15 +208,15 @@
       "k": 10,
       "retriever": "hybrid (RRF)",
       "recall": 1.0,
-      "mrr": 0.9435483870967742,
-      "ndcg": 0.9552340920762741
+      "mrr": 0.9112903225806451,
+      "ndcg": 0.931423108435723
     }
   ],
   "answers": {
-    "keyword_coverage": 0.7903225806451613,
+    "keyword_coverage": 0.8225806451612904,
     "citation_rate": 1.0,
     "abstention_accuracy": 1.0,
-    "p50_latency_ms": 172.57749999953376,
+    "p50_latency_ms": 203.06239999990794,
     "rows": [
       {
         "id": "q01",
@@ -211,10 +224,10 @@
         "answerable": true,
         "abstained": false,
         "citations": [
-          4,
-          2
+          3,
+          4
         ],
-        "answer": "Container ship capacity is measured in twenty-foot equivalent units (TEU). [4] Today, about 90% of non-bulk cargo worldwide is transported by container ships, the largest of which, from 2023 onward, can carry over 24,000 TEU. [4] Although 20-ft units mostly have heavy cargo, and are useful for stabilizing both ships and revenue, carriers financially penalize 1 TEU boxes by comparison. [2]"
+        "answer": "Container ship capacity is measured in twenty-foot equivalent units (TEU). [3] Today, about 90% of non-bulk cargo worldwide is transported by container ships, the largest of which, from 2023 onward, can carry over 24,000 TEU. [3] Although 20-ft units mostly have heavy cargo, and are useful for stabilizing both ships and revenue, carriers financially penalize 1 TEU boxes by comparison. [4]"
       },
       {
         "id": "q02",
@@ -223,9 +236,10 @@
         "abstained": false,
         "citations": [
           4,
+          3,
           1
         ],
-        "answer": "The first North American containers to come to market were 48 feet (15 m) long. [4] Containers with a length of 48 feet (14.63 m) or 53 feet (16.15 m) are restricted to road and rail transport in North America. [1] As some road regulations allow longer trucks, there are also variations of the standard 40-foot container; in Europe and most other places a container of 45 feet (13.72 m) may be pulled"
+        "answer": "The first North American containers to come to market were 48 feet (15 m) long. [4] Another standard container is slightly more than twice as long: 40-foot (12.19 m), dubbed a forty-foot equivalent unit (often FEU or feu). [3] Containers with a length of 48 feet (14.63 m) or 53 feet (16.15 m) are restricted to road and rail transport in North America. [1]"
       },
       {
         "id": "q03",
@@ -233,9 +247,10 @@
         "answerable": true,
         "abstained": false,
         "citations": [
-          3
+          2,
+          5
         ],
-        "answer": "The reason the smaller container is 1+1\u20442 inches (3.8 cm) short of 20 feet is to allow it to be stacked efficiently with 40-foot containers. [3]"
+        "answer": "The reason the smaller container is 1+1\u20442 inches (3.8 cm) short of 20 feet is to allow it to be stacked efficiently with 40-foot containers. [2] But industry makes 10-foot units more frequently of 8 ft 6 in (2.59 m) height, to mix, match (and stack) better in a fleet of longer, 8 ft 6 in tall containers. [5]"
       },
       {
         "id": "q04",
@@ -278,9 +293,10 @@
         "abstained": false,
         "citations": [
           1,
-          2
+          5,
+          3
         ],
-        "answer": "Alexandria Port is one of the oldest ports in the world. [1] The Alexandria Shipyard was originally developed in the 1960s with assistance of the government of the Soviet Union and in 2004 the shipyard ownership was transferred to the Ministry of Defense Egypt has a total of 15 commercial ports along the Mediterranean and Red Sea coasts. [2] The Port of Alexandria is located on the northern coast "
+        "answer": "Alexandria Port is one of the oldest ports in the world. [1] _Source: https://en.wikipedia.org/wiki/Port_of_Alexandria (CC BY-SA 4.0)_ [5] The Alexandria Shipyard was originally developed in the 1960s with assistance of the government of the Soviet Union and in 2004 the shipyard ownership was transferred to the Ministry of Defense Egypt has a total of 15 commercial ports along the Mediterranean an"
       },
       {
         "id": "q08",
@@ -290,9 +306,9 @@
         "citations": [
           1,
           2,
-          3
+          4
         ],
-        "answer": "Port state control (PSC) is an inspection regime for countries to inspect foreign-registered ships in port other than those of the flag state and take action against ships that are not in compliance. [1] _Source: https://en.wikipedia.org/wiki/Port_state_control (CC BY-SA 4.0)_ [2] Memoranda of Understanding (protocols) were signed by some countries unifying Port State Control procedures among the "
+        "answer": "Port state control (PSC) is an inspection regime for countries to inspect foreign-registered ships in port other than those of the flag state and take action against ships that are not in compliance. [1] _Source: https://en.wikipedia.org/wiki/Port_state_control (CC BY-SA 4.0)_ [2] The port state control (PSC) makes inspection of ships in port, taken by a port state control officer (PSCO). [4]"
       },
       {
         "id": "q09",
@@ -363,7 +379,7 @@
         "abstained": false,
         "citations": [
           1,
-          2
+          4
         ],
         "answer": "The 1914 treaty never entered into force due to the outbreak of the First World War. [1] The first version of SOLAS Treaty was passed in 1914 in response to the sinking of RMS Titanic, which prescribed numbers of lifeboats and other emergency equipment along with safety procedures, including continuous radio watches. [1] Hitherto such international conventions had been initiated piecemeal, notably"
       },
@@ -374,7 +390,7 @@
         "abstained": false,
         "citations": [
           1,
-          2
+          5
         ],
         "answer": "Other UN organizations may observe the proceedings of the IMO. [1] It was established following agreement at a UN conference held in Geneva in 1948, but it did not come into force for ten years until the new body, then called the Inter-governmental Maritime Consultative Organization, first assembled on 6 January 1959. [1] The IMO participated in the 2015 United Nations Climate Change Conference in"
       },
@@ -384,10 +400,11 @@
         "answerable": true,
         "abstained": false,
         "citations": [
-          1,
-          4
+          3,
+          4,
+          2
         ],
-        "answer": "In November 1975, the IMCO Assembly, as a part of comprehensive review of the Convention, decided to rename it as the International Maritime Organization (IMO); after ratifications, this happened in May 1982. [1] As well as updates to MARPOL and SOLAS, the IMO facilitated several updated international maritime conventions, including the International Convention on Load Lines in 1966 (replacing an "
+        "answer": "In November 1975, the IMCO Assembly, as a part of comprehensive review of the Convention, decided to rename it as the International Maritime Organization (IMO); after ratifications, this happened in May 1982. [3] As well as updates to MARPOL and SOLAS, the IMO facilitated several updated international maritime conventions, including the International Convention on Load Lines in 1966 (replacing an "
       },
       {
         "id": "q18",
@@ -407,10 +424,9 @@
         "abstained": false,
         "citations": [
           1,
-          2,
-          4
+          2
         ],
-        "answer": "EXW means that a buyer incurs the risks of bringing the goods to their final destination. [1] Where goods are delivered ex ship, the passing of risk does not occur until the ship has arrived at the named port of destination and the goods made available for unloading to the buyer. [2] Risk transfers to buyer when the goods have been loaded on board the ship in the country of Export. [4]"
+        "answer": "EXW means that a buyer incurs the risks of bringing the goods to their final destination. [1] Where goods are delivered ex ship, the passing of risk does not occur until the ship has arrived at the named port of destination and the goods made available for unloading to the buyer. [2] The seller bears the risks and costs associated with supplying the goods to the delivery terminal and unloading the"
       },
       {
         "id": "q20",
@@ -438,11 +454,11 @@
         "answerable": true,
         "abstained": false,
         "citations": [
-          5,
-          4,
-          1
+          1,
+          2,
+          4
         ],
-        "answer": "Bulk carriers are designed to be easy to build and to store cargo efficiently. [5] A bulk carrier's design is largely defined by the cargo it will carry. [4] A bulk carrier or bulker is a merchant ship specially designed to transport unpackaged bulk cargo, typically grain, coal, ore, forest products, steel coils, or cement, in its cargo holds. [1]"
+        "answer": "A bulk carrier or bulker is a merchant ship specially designed to transport unpackaged bulk cargo, typically grain, coal, ore, forest products, steel coils, or cement, in its cargo holds. [1] As of 1999, the International Convention for the Safety of Life at Sea defines a bulk carrier as \"a ship constructed with a single deck, top side tanks and hopper side tanks in cargo spaces and intended to pr"
       },
       {
         "id": "q23",
@@ -451,7 +467,7 @@
         "abstained": false,
         "citations": [
           1,
-          2
+          3
         ],
         "answer": "Since the first specialized bulk carrier was built in 1852, economic forces have led to increased size and sophistication of these ships. [1] Today's bulk carriers are specially designed to maximize capacity, safety, efficiency, and durability. [1] Two defining characteristics of bulk carriers were already emerging: the double bottom, which was adopted in 1890, and the triangular structure of the "
       },
@@ -461,9 +477,9 @@
         "answerable": true,
         "abstained": false,
         "citations": [
-          2
+          3
         ],
-        "answer": "Draft varies according to the loaded condition of the ship. [2] The draft or draught of a ship is a determined depth of the vessel below the waterline, measured vertically to its hull's lowest point\u2014its propellers, or keel, or other reference point. [2] A ship's draft/draught is the \"depth of the vessel below the waterline measured vertically to the lowest part of the hull, propellers, or other re"
+        "answer": "Draft varies according to the loaded condition of the ship. [3] The draft or draught of a ship is a determined depth of the vessel below the waterline, measured vertically to its hull's lowest point\u2014its propellers, or keel, or other reference point. [3] A ship's draft/draught is the \"depth of the vessel below the waterline measured vertically to the lowest part of the hull, propellers, or other re"
       },
       {
         "id": "q25",
@@ -471,11 +487,11 @@
         "answerable": true,
         "abstained": false,
         "citations": [
-          1,
+          3,
           2,
           4
         ],
-        "answer": "Container ship capacity is measured in twenty-foot equivalent units (TEU). [1] Container capacity is often expressed in twenty-foot equivalent units (TEU, or sometimes teu). [2] An equivalent unit is a measure of containerized cargo capacity equal to one standard 20 ft (6.10 m) (length) \u00d7 8 ft (2.44 m) (width) container. [4]"
+        "answer": "Container ship capacity is measured in twenty-foot equivalent units (TEU). [3] Container capacity is often expressed in twenty-foot equivalent units (TEU, or sometimes teu). [2] An equivalent unit is a measure of containerized cargo capacity equal to one standard 20 ft (6.10 m) (length) \u00d7 8 ft (2.44 m) (width) container. [4]"
       },
       {
         "id": "q26",
@@ -483,10 +499,10 @@
         "answerable": true,
         "abstained": false,
         "citations": [
-          1,
-          2
+          2,
+          1
         ],
-        "answer": "Intermodal containers are primarily used to store and transport materials and products efficiently and securely in the global containerized intermodal freight transport system, but smaller numbers are in regional use as well. [1] An intermodal container (also known as a shipping container, freight container, or, in US military use, MILVAN) is a large standardized steel container designed and built"
+        "answer": "Intermodal containers are primarily used to store and transport materials and products efficiently and securely in the global containerized intermodal freight transport system, but smaller numbers are in regional use as well. [2] An intermodal container (also known as a shipping container, freight container, or, in US military use, MILVAN) is a large standardized steel container designed and built"
       },
       {
         "id": "q27",
@@ -495,9 +511,10 @@
         "abstained": false,
         "citations": [
           1,
+          5,
           4
         ],
-        "answer": "Logistics management is a component that holds the supply chain together. [1] Supply chain management integrates supply and demand management within and across companies. [4] Logistics is the part of supply chain management that deals with the efficient forward and reverse flow of goods, services, and related information from the point of origin to the point of consumption according to the needs o"
+        "answer": "Logistics management is a component that holds the supply chain together. [1] Supply chain management is the management of such a chain. [5] Supply chain management integrates supply and demand management within and across companies. [4]"
       },
       {
         "id": "q28",
@@ -515,10 +532,10 @@
         "answerable": true,
         "abstained": false,
         "citations": [
-          2,
-          1
+          1,
+          2
         ],
-        "answer": "Lean manufacturing is a management system built on three principles: produce only what is needed, when it is needed; correct abnormalities as soon as they occur; and empower workers to improve the process themselves. [2] Womack and Jones define Lean as \"a way to do more and more with less and less\u2014less human effort, less equipment, less time, and less space\u2014while coming closer and closer to provid"
+        "answer": "Lean manufacturing is a management system built on three principles: produce only what is needed, when it is needed; correct abnormalities as soon as they occur; and empower workers to improve the process themselves. [1] Womack and Jones define Lean as \"a way to do more and more with less and less\u2014less human effort, less equipment, less time, and less space\u2014while coming closer and closer to provid"
       },
       {
         "id": "q30",
@@ -537,10 +554,10 @@
         "answerable": true,
         "abstained": false,
         "citations": [
-          3,
+          2,
           1
         ],
-        "answer": "Warehouses are used by manufacturers, importers, exporters, wholesalers, transport businesses, customs, etc. [3] A warehouse is a building for storing goods. [3] As a customised storage building, a warehouse enables a business to stockpile goods, e.g., to build up a full load prior to transport, or hold unloaded goods before further distribution, or store goods like wine and cheese that require ma"
+        "answer": "Warehouses are used by manufacturers, importers, exporters, wholesalers, transport businesses, customs, etc. [2] A warehouse is a building for storing goods. [2] As a customised storage building, a warehouse enables a business to stockpile goods, e.g., to build up a full load prior to transport, or hold unloaded goods before further distribution, or store goods like wine and cheese that require ma"
       },
       {
         "id": "q32",

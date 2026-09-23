@@ -50,6 +50,12 @@ class Answer:
     abstained: bool = False
     usage: dict[str, int] = field(default_factory=dict)
     latency_ms: float = 0.0
+    # Which engine actually wrote the answer - it can differ from the one
+    # configured when a hosted model is unavailable and the pipeline falls back.
+    engine: str = ""
+    # Set when something the reader should know about happened, such as that
+    # fallback. None on an ordinary answer.
+    notice: str | None = None
 
     @property
     def citations(self) -> list[dict[str, Any]]:

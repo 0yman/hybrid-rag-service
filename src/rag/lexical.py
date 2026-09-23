@@ -51,9 +51,22 @@ class BM25Index:
             self._tokens.append(tokenize(f"{chunk.title} {chunk.text}"))
         self._rebuild()
 
+    def remove_document(self, doc_id: str) -> int:
+        keep = [i for i, chunk in enumerate(self._chunks) if chunk.doc_id != doc_id]
+        removed = len(self._chunks) - len(keep)
+        if removed:
+            self._chunks = [self._chunks[i] for i in keep]
+            self._tokens = [self._tokens[i] for i in keep]
+            self._rebuild()
+        return removed
+
+    def clear(self) -> None:
+        self._chunks, self._tokens, self._bm25 = [], [], None
+
     def _rebuild(self) -> None:
         # BM25Okapi computes corpus statistics up front, so it has to be
-        # rebuilt whenever documents are added. Fine for batch ingestion.
+        # rebuilt whenever documents are added or removed. Cheap next to
+        # embedding, and it keeps IDF honest after a removal.
         self._bm25 = BM25Okapi(self._tokens) if self._tokens else None
 
     def search(self, query: str, top_k: int) -> list[ScoredChunk]:

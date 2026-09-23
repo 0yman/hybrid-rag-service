@@ -89,6 +89,7 @@ class Generator:
                 cited_ordinals=[],
                 abstained=True,
                 latency_ms=(time.perf_counter() - started) * 1000,
+                engine=self.llm.name,
             )
 
         prompt = build_prompt(question, contexts)
@@ -114,4 +115,5 @@ class Generator:
             abstained=abstained,
             usage=response.usage,
             latency_ms=(time.perf_counter() - started) * 1000,
+            engine=self.llm.name,
         )

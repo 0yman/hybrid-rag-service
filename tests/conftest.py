@@ -1,6 +1,6 @@
 """Shared fixtures.
 
-Every test runs on the `hash` embedder and the `mock` LLM: no model download,
+Every test runs on the `hash` embedder and the `extractive` engine: no model download,
 no network, no API key. The suite therefore behaves identically on a laptop
 and in CI, which is the only way a failure means something.
 """
@@ -59,9 +59,11 @@ def corpus_dir(tmp_path: Path) -> Path:
 def settings(tmp_path: Path) -> Settings:
     return get_settings(
         embedding_backend="hash",
-        llm_backend="mock",
+        llm_backend="extractive",
         index_dir=tmp_path / "index",
-        corpus_dir=tmp_path / "corpus",
+        uploads_dir=tmp_path / "uploads",
+        benchmark_dir=tmp_path / "corpus",
+        benchmark_index_dir=tmp_path / "benchmark_index",
         final_top_k=3,
     )
 

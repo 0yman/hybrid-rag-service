@@ -1,243 +1,276 @@
-# Hybrid RAG Service
+# Ask your documents
 
-Retrieval-augmented question answering over a document corpus, with **hybrid
-retrieval** (dense + BM25 fused with Reciprocal Rank Fusion), **mandatory
-citations**, **abstention** on out-of-corpus questions, and an **evaluation
-harness that measures whether any of it actually works**.
+Add your own files — PDFs, text, Markdown — and ask questions about them in
+plain language. Every answer shows exactly which passage it came from, and when
+the answer isn't in your files, it says so instead of guessing.
 
-The retrieval code is the ordinary part. The evaluation is the point: it is
-what turned "hybrid retrieval is better" from an assumption into a measured,
-and partly *falsified*, claim — see [Results](#results).
+It runs on your own computer. With no setup beyond installing it, nothing you
+add ever leaves your machine.
 
-```
-                    ┌─────────────┐
-  question ────────▶│  embed(q)   │──▶ FAISS IndexFlatIP ──┐
-                    └─────────────┘      (cosine, 384d)     │
-                                                            ├──▶ RRF ──▶ top-k ──▶ LLM ──▶ answer + [citations]
-                    ┌─────────────┐                         │                              └─ or abstention
-  question ────────▶│  tokenize   │──▶ BM25Okapi ───────────┘
-                    └─────────────┘
-```
+![The app answering a question about an uploaded PDF, with the passage it quoted highlighted as source 1](docs/screenshot.png)
 
 ---
 
-## Quickstart
+## Get started
 
-No API key needed — the defaults run the whole pipeline offline.
+You need **Python 3.11 or newer**. If you don't have it, install it from
+[python.org/downloads](https://www.python.org/downloads/) — on Windows, tick
+**"Add python.exe to PATH"** during setup.
+
+**1. Download this project.** Click the green **Code** button at the top of
+this page, then **Download ZIP**, and unzip it anywhere. (Or, if you use git:
+`git clone https://github.com/0yman/hybrid-rag-service`.)
+
+**2. Start it.**
+
+- **Windows:** double-click **`start-windows.bat`**.
+- **Mac / Linux:** open a terminal in the folder and run `./start-mac-linux.sh`.
+
+The first start sets everything up, which takes about two minutes and needs an
+internet connection. After that it starts in a few seconds, and your browser
+opens at **http://localhost:8000**.
+
+**3. Use it.** Drag files onto the page — or click **Load sample documents**
+to try it first on 22 articles about shipping and logistics — then type a
+question. Click any highlighted number in an answer to jump to its source.
+
+To stop the app, close the black window (or press Ctrl+C in it). Your
+documents are kept for next time.
+
+<details>
+<summary>Prefer the command line?</summary>
+
+```bash
+pip install -r requirements.txt
+python app.py              # opens http://localhost:8000
+python app.py --port 9000  # a different port
+```
+
+Or with Docker: `docker compose up --build`.
+
+</details>
+
+---
+
+## Better answers with a free AI key (optional)
+
+Out of the box, answers **quote your documents directly**: the app finds the
+sentences that best match your question and shows them, word for word. That
+needs no account and never invents anything — but it can't summarise or
+combine facts.
+
+For written answers, add a free Google Gemini key:
+
+1. Get one at [aistudio.google.com/apikey](https://aistudio.google.com/apikey)
+   (no credit card).
+2. In the project folder, copy **`.env.example`** to a new file named
+   **`.env`**, open it, and paste the key after `GOOGLE_API_KEY=`.
+3. Restart the app. The label at the top right changes to *Google Gemini*.
+
+Any OpenAI-compatible provider works too (OpenAI, Groq, OpenRouter, a local
+Ollama) — see the comments in `.env.example`.
+
+**What gets sent:** with a key, your question and the few passages used to
+answer it go to that provider. Your full documents never do. Without a key,
+nothing leaves your computer.
+
+If the free model is busy — which happens — the app doesn't fail: it answers
+by quoting instead, and tells you so.
+
+---
+
+## Troubleshooting
+
+| What you see | What to do |
+|---|---|
+| *"Python 3.11 or newer is needed"* | Install it from python.org, and on Windows tick "Add python.exe to PATH". |
+| The first start seems stuck | It's downloading the search model (about 90 MB). Give it a minute. |
+| *"no readable text found"* on a PDF | It's a scanned image, not text. Run it through OCR first (many PDF tools have "recognise text"). |
+| *"Not in your documents"* but you know it is | Try wording the question the way the document does, or add a key for written answers. |
+| Port 8000 is in use | The app picks the next free port automatically and prints it. |
+| Setup failed partway | Delete the `.venv` folder in the project and run the start file again. |
+
+---
+
+## For developers
+
+<details open>
+<summary><b>How it works</b></summary>
+
+```
+question ─┬─▶ embed ──▶ FAISS (meaning) ──┐
+          │                               ├─▶ Reciprocal Rank Fusion ──▶ top 5 passages ──▶ answer + [citations]
+          └─▶ tokens ─▶ BM25 (keywords) ──┘                                                 └─ or "not in your documents"
+```
+
+- **Chunking** packs whole sentences into ~220-word passages with overlap, so
+  a fact is never cut in half. PDFs are reflowed first: their text arrives one
+  printed line at a time, with headings indistinguishable from sentences.
+- **Retrieval** runs dense (MiniLM embeddings, FAISS) and lexical (BM25)
+  search, then fuses the two rankings with RRF — ranks, not scores, because
+  cosine and BM25 scores live on incomparable scales.
+- **Answers** carry positional citations validated against the passages
+  actually shown; a marker pointing at nothing is stripped. With no key, the
+  extractive engine quotes the sentences closest *in meaning* to the question
+  and declines below a similarity floor.
+- **Everything is provider-agnostic**: Gemini, any OpenAI-format endpoint, or
+  fully offline. Missing keys fail with a sentence saying what to do.
+
+</details>
+
+<details>
+<summary><b>API</b></summary>
+
+The web page is a thin client over a JSON API; interactive docs at `/docs`.
+
+| Endpoint | |
+|---|---|
+| `POST /query` | Question in; answer, citations, every passage used with its keyword and meaning rank |
+| `GET /documents` · `POST /documents` · `DELETE /documents/{id}` · `DELETE /documents` | List, upload (multipart), remove one, remove all |
+| `POST /documents/sample` | Load the sample corpus |
+| `GET /status` · `GET /health` | What the page needs to draw itself; liveness |
+
+Uploads are restricted to `.pdf/.txt/.md`, size-capped, and saved under a
+sanitised name — a crafted filename like `../../x.txt` cannot escape the
+uploads folder. Re-uploading a file updates it instead of duplicating it.
+
+</details>
+
+<details>
+<summary><b>Tests</b></summary>
+
+157 tests, no network, no API key, a few seconds:
 
 ```bash
 pip install -r requirements-dev.txt
-
-python scripts/fetch_corpus.py     # 22 Wikipedia articles on shipping & ports
-python scripts/ingest.py           # 459 chunks, ~19s on CPU
-python -m pytest                   # 100 tests, ~2s, no network
-
-uvicorn rag.api:app --app-dir src --port 8000
+python -m pytest
+ruff check src eval scripts tests app.py
 ```
 
-```bash
-curl -s localhost:8000/query -H 'content-type: application/json' \
-  -d '{"question": "What is demurrage in vessel chartering?"}' | jq
-```
+CI installs exactly what a user installs, runs the suite on Python 3.11 and
+3.12, rebuilds the benchmark index, re-runs the evaluation, and fails the
+build if recall, citation rate or abstention drop below a floor.
 
-For real generated answers, get a [free Gemini API key](https://aistudio.google.com/apikey)
-(no credit card) and set `GOOGLE_API_KEY` plus `RAG_LLM_BACKEND=gemini` in `.env`.
-
-Or just `docker compose up --build` — the image builds its own index, so the
-container starts ready to serve with no key at all.
+</details>
 
 ---
 
-## Results
+## Evaluation
 
-Two query sets, because **users ask questions in more than one shape** and a
-retriever that is excellent at one can be useless at the other:
+The retrieval code is the ordinary part. The evaluation is what makes the
+claims in this README checkable — and it has changed the design more than
+once, including by contradicting me.
 
-| Query set | What it looks like | Size |
+### The benchmark
+
+A fixed corpus of 22 Wikipedia articles on shipping and logistics
+(`data/benchmark/`, committed so results reproduce from a clean clone), with
+two hand-written question sets — because users ask in more than one shape:
+
+| Set | Looks like | Size |
 |---|---|---|
-| `eval/golden.jsonl` | natural-language questions — *"What is the inverse of demurrage called?"* | 31 answerable + 4 out-of-domain |
+| `eval/golden.jsonl` | natural questions — *"What is the inverse of demurrage called?"* | 31 answerable + 4 off-topic |
 | `eval/golden_keyword.jsonl` | terse keyword queries — *"MARPOL STCW MLC conventions"* | 15 |
 
-### Retrieval, at k = 3
+The benchmark is indexed separately from your documents, so evaluating never
+touches them.
 
-| Retriever | Natural language | Keyword | **Worst case** |
-|---|---|---|---|
-| Dense only (MiniLM-L6) | 0.935 | 0.667 | **0.667** |
-| BM25 only | 0.919 | **1.000** | **0.919** |
-| Hybrid (RRF) | **0.968** | 0.867 | **0.867** |
+### Retrieval
 
-*(recall@3; full tables including MRR and nDCG in [`eval/results.md`](eval/results.md)
-and [`eval/results_keyword.md`](eval/results_keyword.md))*
+Recall@3, under both runtimes that can load the embedding model (see below):
 
-### What this actually shows
+| Retriever | Natural · fastembed | Keyword · fastembed | Natural · sentence-transformers | Keyword · sentence-transformers |
+|---|---|---|---|---|
+| Dense only | 0.952 | 0.800 | 0.935 | **0.667** |
+| BM25 only | 0.919 | **1.000** | 0.919 | **1.000** |
+| Hybrid (RRF) | **0.968** | **0.933** | **0.968** | 0.867 |
 
-**Dense retrieval is the riskiest single choice.** It wins narrowly on
-natural-language questions and then collapses to 0.667 on keyword queries —
-worse at k=5 (0.733) than BM25 is at k=1 (0.933). Its failures are exactly the
-ones you would predict: rare proper nouns and acronym strings that appear a
-handful of times in the corpus.
+Full tables with MRR, nDCG and a k-sweep: [`eval/results.md`](eval/results.md),
+[`eval/results_keyword.md`](eval/results_keyword.md), and the
+`*_sentence_transformers.md` files beside them.
 
-Five queries BM25 retrieved and dense missed entirely at k=3:
+**What holds under both:** dense retrieval drops sharply on keyword queries —
+to 0.667 or 0.800 — exactly where BM25 is perfect. Its misses are the ones you
+would predict: rare proper nouns and acronym strings (`MARPOL STCW MLC`,
+`Rhakotis Pharos 1900 BC`). That is the case for keeping a lexical retriever
+at all.
 
-```
-k01  MARPOL STCW MLC conventions
-k02  twistlocks 3 inches gap 40-foot
-k03  Rhakotis Pharos 1900 BC
-k07  Amoco Cadiz 1978
-k15  slotted facility loading docks
-```
+### The runtime changed the conclusion
 
-**Fusion did not straightforwardly win, and the harness is what revealed it.**
-RRF is second-best on both sets rather than best on either — it inherits some
-of dense's blind spot and gives up some of BM25's precision. On
-natural-language questions at k=5 the complementarity analysis found dense
-retrieving *everything* BM25 found plus two more, meaning BM25 contributed
-nothing unique and fusing was pure overhead at that depth.
+The embedding model, `all-MiniLM-L6-v2`, can be run by two libraries.
+`sentence-transformers` pulls in PyTorch — several gigabytes on Linux, which is
+enough to lose someone who just wanted to try the app. `fastembed` runs the
+same model on ONNX Runtime in about 15 MB. Switching was meant to be a
+packaging change.
 
-**On this corpus, BM25 alone has the best worst case.** That is not the result
-I expected when I built the pipeline, and it is the honest reading of the
-numbers. Wikipedia articles are topically distinct and share heavy vocabulary
-with questions about them, which is close to the best case for a lexical
-retriever. On a corpus with more paraphrase and more synonymy — support
-tickets, policy documents, transcripts — the balance would be expected to move
-back toward dense, which is exactly why the harness takes a `--golden` flag
-rather than hard-coding one query set.
+It wasn't. On real document chunks the two produce vectors that agree to a
+cosine similarity of only ~0.88 on average (0.69 at worst) — short, clean test
+sentences agree almost perfectly, which is exactly why a quick check missed
+it. The evaluation caught it, and the effect was not small:
 
-### Answer quality
+- dense recall on keyword queries moved **13 points** (0.667 → 0.800);
+- which retriever is safest flipped. Under sentence-transformers, BM25 alone
+  had the best worst case at k=3 (0.919 vs hybrid's 0.867), and at k=5 plain
+  dense retrieval beat hybrid on natural questions (1.000 vs 0.968). Under
+  fastembed, hybrid has the best worst case (0.933), and at k=5 it reaches
+  1.000 on both sets.
 
-| Metric | Value | What it measures |
+So both are reported, the runtime is part of the embedder's name recorded in
+the index (an index built by one is refused by the other, rather than searched
+with vectors from a different space), and fastembed is the default because it
+is what someone installing the app actually gets.
+
+### Answers
+
+| | fastembed | sentence-transformers |
 |---|---|---|
-| Abstention accuracy | 0.943 | Says "I don't know" on out-of-domain questions instead of inventing an answer |
-| Citation rate | 0.968 | Answers carrying at least one valid `[n]` marker |
-| Keyword coverage | 0.726 | Expected facts actually present in the answer |
+| Declined off-topic questions | 1.000 | 1.000 |
+| Answers with a valid citation | 1.000 | 1.000 |
+| Expected facts present in the answer | 0.790 | 0.823 |
 
-Measured with the deterministic `mock` backend so the numbers are reproducible
-in CI. Swap in `RAG_LLM_BACKEND=gemini` for fluent answers; the abstention and
-citation contracts are enforced in code either way.
+These are for the extractive engine — the no-key default — so they reproduce
+exactly. Its first version matched sentences by shared words. Tested on
+questions *paraphrased* the way a real user asks, that failed badly: "How long
+does the warranty last?" shares one word with "The warranty covers defects for
+twenty four months". Matching by meaning instead, with a similarity floor of
+0.45, was better on every measure:
+
+| Extractive, fastembed | Facts found (golden) | Facts found (paraphrased) | Off-topic declined |
+|---|---|---|---|
+| By shared words | 0.726 | 0.569 | 0.875 |
+| **By meaning** | **0.790** | **0.625** | **1.000** |
+
+The floor sits in the gap between the most similar off-topic question (0.40)
+and the least similar real one (0.54) — a thin margin, chosen on this same
+data, so it is a setting (`RAG_EXTRACTIVE_MIN_SIMILARITY`), not a constant.
+
+One more thing the paraphrase test showed: the golden questions were written
+by reading the source, so they naturally reuse its words — flattering to any
+matcher that relies on them. A benchmark written that way understates how
+often real questions are phrased differently.
 
 ### Reproduce
 
 ```bash
-make eval-all      # writes eval/results.md and eval/results_keyword.md
+make eval-all        # default runtime (fastembed)
+make eval-reference  # sentence-transformers; needs requirements-extras.txt
 ```
 
 ---
-
-## Design decisions
-
-**Why RRF instead of weighted score blending.** Dense cosine scores live in
-`[-1, 1]`; BM25 scores are unbounded and shift with corpus statistics. Adding
-them means normalising two incomparable scales and re-tuning that
-normalisation whenever the corpus changes. RRF discards scores and keeps only
-ranks — `score(d) = Σ weight / (k + rank(d))` — so a document ranked well by
-both beats one ranked first by only one. A test asserts that multiplying a
-BM25 score by 1000 leaves the fused ordering unchanged.
-
-**Why abstention is a first-class output, not a prompt suggestion.** A RAG
-system that always answers is one that hallucinates confidently on anything
-outside its corpus. The model is instructed to emit a sentinel token, the
-pipeline turns that into `abstained=True`, and the out-of-domain questions in
-the golden set exist solely to score it.
-
-**Why citation markers are positional and validated.** The model sees `[1]…[5]`,
-never internal chunk ids. Markers outside that range are stripped from the
-answer rather than passed through — an invented `[9]` looks checkable to a
-reader while pointing at nothing.
-
-**Why sentence-aware chunking.** Fixed character windows cut sentences, and
-therefore facts, in half. Chunks pack whole sentences to a word budget and
-carry a sentence tail into the next chunk, so a fact spanning a boundary
-survives in both. Two bugs in this were caught by tests, not by reading the
-code: a closing quotation mark being silently dropped, and small-tail merging
-that could exceed the word budget.
-
-**Why `IndexFlatIP` rather than IVF/HNSW.** Flat is exact. At 459 chunks an
-approximate index trades recall for a speed-up that is not measurable. The
-swap is one line when the corpus justifies it.
-
-**Why the provider is a config value.** Generation and embeddings both sit
-behind an interface, so Gemini, any OpenAI-format endpoint (OpenAI, Groq,
-Together, OpenRouter, a local Ollama or vLLM) and an offline stub are
-interchangeable without touching the pipeline. The adapters are unit-tested
-against fake SDK objects - including that OpenAI embeddings are re-sorted by
-`index`, since the API does not promise response order and silently attaching
-vectors to the wrong chunks is the kind of bug that only shows up as slightly
-worse recall.
-
-**Why four embedding backends.** `local` (sentence-transformers) for real
-offline use, `gemini` and `openai` for the hosted options, and `hash` — a
-deterministic hashing vectoriser — so the test suite needs no model download,
-no network and no API key. CI runs in seconds and fails only for real reasons.
-
----
-
-## Layout
-
-```
-src/rag/
-  config.py       Pydantic settings, one place for every knob
-  loaders.py      .txt / .md / .pdf  ->  Document
-  chunking.py     sentence-aware chunking with overlap
-  embeddings.py   gemini | local | hash, all L2-normalised
-  vectorstore.py  FAISS IndexFlatIP + persistence
-  lexical.py      BM25Okapi index
-  fusion.py       Reciprocal Rank Fusion
-  retriever.py    hybrid retrieval, optional cross-encoder rerank
-  generator.py    grounded prompt, citation parsing, abstention
-  pipeline.py     ingest -> index -> retrieve -> generate
-  api.py          FastAPI: /query /ingest /health /stats /metrics
-
-eval/
-  metrics.py      recall@k, precision@k, MRR, nDCG@k  (pure functions)
-  golden.jsonl            natural-language question set
-  golden_keyword.jsonl    keyword / exact-token query set
-  run_eval.py     ablations, k-sweep, complementarity analysis
-```
-
-## API
-
-| Endpoint | Purpose |
-|---|---|
-| `POST /query` | Question in; answer, citations, and every retrieved context with its per-retriever scores out |
-| `POST /ingest` | Index a file or directory at runtime |
-| `GET /health` | Liveness + index stats; succeeds even with no index loaded |
-| `GET /stats` | Corpus size, embedder, dimensions |
-| `GET /metrics` | Prometheus |
-
-`/query` returns the component scores behind every result (`dense`,
-`lexical`, and each retriever's rank), which is what makes a bad ranking
-diagnosable after the fact rather than a mystery.
-
-## Testing
-
-100 tests, no network, no API key, ~2s.
-
-```bash
-python -m pytest
-python -m ruff check src eval scripts tests
-```
-
-CI runs the suite on Python 3.11 and 3.12, rebuilds the index from the
-committed corpus, reruns both evaluation suites, and **fails the build if
-recall drops below a floor** — so a change that quietly degrades retrieval
-shows up in the pull request.
 
 ## Limitations
 
-- **Small sample.** 46 queries over 22 documents. Differences of a few points
-  between retrievers are within noise; the dense-vs-BM25 gap on keyword
-  queries (0.667 vs 1.000) is not.
-- **Binary relevance, document-level.** A chunk either comes from a relevant
-  document or it does not. Graded relevance would be a better signal for nDCG.
-- **The golden sets are author-written**, which risks encoding the same
-  assumptions the retriever was built on. The keyword set was added
-  specifically because the first set turned out to flatter dense retrieval.
-- **The reported numbers use the `local` embedder and the `mock` LLM**, so they are reproducible from a clean clone; the hosted backends share the same interfaces and the same tests.
-- **No reranker in the reported numbers.** `CrossEncoderReranker` is wired in
-  and selectable, but adds a model download, so the committed results are
-  without it.
-- **Corpus is Wikipedia**, CC BY-SA 4.0, attributed per file.
+- **Small benchmark.** 46 queries over 22 documents. A few points between
+  retrievers is noise; the dense-vs-BM25 gap on keyword queries is not.
+- **Author-written questions**, which risks encoding the retriever's own
+  assumptions — see the paraphrase finding above.
+- **Extractive answers can only quote.** They can't combine two facts or
+  answer "how many" by counting. Add a key for that.
+- **Scanned PDFs need OCR first**; the app reads text, not images.
+- **One user at a time.** It's built as a personal tool on your own machine,
+  not a shared server.
 
 ## License
 
-MIT
+MIT. The benchmark articles are from Wikipedia, CC BY-SA 4.0, attributed in
+each file.

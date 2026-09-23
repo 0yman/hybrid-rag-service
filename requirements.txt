@@ -1,19 +1,22 @@
-# Core pipeline
+# Everything the app needs: about 325 MB installed and two minutes on a
+# typical connection. No PyTorch, which on Linux would be several GB alone.
+
+# Search
 numpy>=1.26
 faiss-cpu>=1.8
 rank-bm25>=0.2.2
+fastembed>=0.4           # runs the embedding model on ONNX Runtime
+
+# Web app
+fastapi>=0.110
+uvicorn[standard]>=0.29
+python-multipart>=0.0.9  # file uploads
 pydantic>=2.6
 pydantic-settings>=2.2
 
-# API
-fastapi>=0.110
-uvicorn[standard]>=0.29
-prometheus-fastapi-instrumentator>=7.0
-
-# Providers (optional at runtime; pick one via RAG_EMBEDDING_BACKEND)
-google-genai>=1.0
-sentence-transformers>=3.0
-
-# Loaders and corpus fetching
+# Reading documents
 pypdf>=4.0
-httpx>=0.27
+
+# Hosted answer engines (only used if you add a key to .env)
+google-genai>=1.0
+openai>=1.40

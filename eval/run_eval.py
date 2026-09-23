@@ -13,7 +13,11 @@ The `--ablate` mode reruns retrieval with dense only, BM25 only and both
 fused, which is the only honest way to claim hybrid retrieval was worth it.
 
     python eval/run_eval.py --ablate
-    python eval/run_eval.py --generate --llm-backend mock
+    python eval/run_eval.py --generate                       # extractive answers
+    python eval/run_eval.py --generate --llm-backend gemini  # a hosted model
+
+The benchmark corpus lives in data/benchmark/ and is indexed separately from
+the app's own documents, in data/benchmark_index/.
 """
 
 from __future__ import annotations
@@ -48,6 +52,24 @@ ABLATIONS: dict[str, tuple[str, ...]] = {
     "BM25 only": ("lexical",),
     "hybrid (RRF)": ("dense", "lexical"),
 }
+
+
+def open_benchmark(settings) -> RAGPipeline:
+    """The benchmark index, built from the committed corpus on first use."""
+    try:
+        return RAGPipeline.load(settings)
+    except FileNotFoundError:
+        print(f"Building the benchmark index from {settings.benchmark_dir} ...")
+        pipeline = RAGPipeline.create(settings)
+        documents, chunks = pipeline.ingest_path(settings.benchmark_dir)
+        if chunks == 0:
+            raise SystemExit(
+                f"No benchmark documents in {settings.benchmark_dir}. "
+                "Run `python scripts/fetch_corpus.py` to download them."
+            ) from None
+        pipeline.save()
+        print(f"Indexed {documents} documents into {chunks} chunks.\n")
+        return pipeline
 
 
 def load_golden(path: Path) -> list[dict[str, Any]]:
@@ -346,15 +368,35 @@ def main() -> int:
         help="Comma-separated depths to also score at, e.g. 1,3,5,10",
     )
     parser.add_argument("--generate", action="store_true", help="Also score generated answers")
-    parser.add_argument("--llm-backend", choices=["gemini", "mock"], default=None)
+    parser.add_argument(
+        "--llm-backend", choices=["auto", "gemini", "openai", "extractive"], default="extractive",
+        help="Answer engine for --generate. extractive is deterministic, so results reproduce.",
+    )
+    parser.add_argument(
+        "--engine", choices=["auto", "fastembed", "sentence-transformers"], default="auto",
+        help="Runtime for the local embedding model. The two give different vectors.",
+    )
     parser.add_argument("--golden", type=Path, default=GOLDEN_PATH)
     parser.add_argument("--out", type=Path, default=REPO_ROOT / "eval" / "results.md")
     parser.add_argument("--json-out", type=Path, default=REPO_ROOT / "eval" / "results.json")
     args = parser.parse_args()
 
-    overrides = {"llm_backend": args.llm_backend} if args.llm_backend else {}
-    settings = get_settings(**overrides)
-    pipeline = RAGPipeline.load(settings)
+    engine = args.engine
+    if engine == "auto":
+        import importlib.util
+
+        engine = "fastembed" if importlib.util.find_spec("fastembed") else "sentence-transformers"
+
+    # The benchmark gets its own index - one per runtime, since their vectors
+    # are not interchangeable - so evaluating never reads or rewrites the
+    # documents someone has uploaded to the app.
+    base = get_settings()
+    settings = get_settings(
+        llm_backend=args.llm_backend,
+        local_embedding_engine=engine,
+        index_dir=base.benchmark_index_dir / engine,
+    )
+    pipeline = open_benchmark(settings)
     golden = load_golden(args.golden)
 
     modes = ABLATIONS if args.ablate else {"hybrid (RRF)": ("dense", "lexical")}
@@ -381,7 +423,7 @@ def main() -> int:
         "answerable": sum(1 for r in golden if r["answerable"]),
         "retrieval": retrieval,
         "best_retriever": best_retriever,
-        "llm_backend": settings.llm_backend,
+        "llm_backend": settings.resolved_llm_backend(),
     }
 
     if args.ablate:

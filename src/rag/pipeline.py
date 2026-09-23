@@ -11,13 +11,27 @@ from .config import Settings, get_settings
 from .embeddings import Embedder, get_embedder
 from .generator import Generator
 from .lexical import BM25Index
-from .llm import get_llm
+from .llm import ExtractiveLLM, get_llm
 from .loaders import load_directory, load_file
 from .models import Answer, Chunk, Document, ScoredChunk
 from .retriever import CrossEncoderReranker, HybridRetriever
 from .vectorstore import VectorStore
 
 logger = logging.getLogger(__name__)
+
+
+def _describe_failure(exc: Exception) -> str:
+    """A short, human reason for a provider failure - not a stack trace."""
+    message = str(exc).lower()
+    if "503" in message or "unavailable" in message or "high demand" in message:
+        return "it is overloaded right now"
+    if "429" in message or "resource_exhausted" in message or "rate limit" in message:
+        return "the free-tier rate limit was reached"
+    if "api key" in message or "api_key" in message or "401" in message or "403" in message:
+        return "the API key was rejected"
+    if "timeout" in message or "deadline" in message:
+        return "it timed out"
+    return "it returned an error"
 
 
 class RAGPipeline:
@@ -47,8 +61,19 @@ class RAGPipeline:
         `scripts/ingest.py` fail without a chat API key for no reason.
         """
         if self._generator is None:
-            self._generator = Generator(get_llm(self.settings))
+            if self.settings.resolved_llm_backend() == "extractive":
+                self._generator = Generator(self._extractive_engine())
+            else:
+                self._generator = Generator(get_llm(self.settings))
         return self._generator
+
+    def _extractive_engine(self) -> ExtractiveLLM:
+        """Quote by meaning when the index has a real embedding model behind
+        it; fall back to shared words when it is the hashing stub."""
+        return ExtractiveLLM(
+            embedder=self.embedder if self.embedder.semantic else None,
+            min_similarity=self.settings.extractive_min_similarity,
+        )
 
     # --- construction ----------------------------------------------------
 
@@ -85,10 +110,31 @@ class RAGPipeline:
             use_reranker=use_reranker,
         )
 
+    @classmethod
+    def open(cls, settings: Settings | None = None) -> RAGPipeline:
+        """Load the saved index if there is one, otherwise start empty.
+
+        What the app wants on startup: a first run has no index yet, and that
+        is a normal state to begin in, not an error to report.
+        """
+        settings = settings or get_settings()
+        try:
+            return cls.load(settings)
+        except FileNotFoundError:
+            return cls.create(settings)
+
     # --- ingestion -------------------------------------------------------
 
     def ingest_documents(self, documents: list[Document]) -> int:
         settings = self.settings
+        # Ingesting a document that is already indexed replaces it, so
+        # re-uploading an edited file updates it rather than duplicating
+        # every one of its chunks.
+        indexed = self.indexed_doc_ids()
+        for document in documents:
+            if document.doc_id in indexed:
+                self.remove_document(document.doc_id)
+
         chunks: list[Chunk] = []
         for document in documents:
             chunks.extend(
@@ -124,6 +170,38 @@ class RAGPipeline:
         self.vector_store.save(self.settings.index_dir)
         self.bm25_index.save(self.settings.index_dir)
 
+    # --- document management ---------------------------------------------
+
+    def indexed_doc_ids(self) -> set[str]:
+        return {chunk.doc_id for chunk in self.vector_store.chunks}
+
+    def list_documents(self) -> list[dict[str, Any]]:
+        """One entry per indexed document, in the order they were added."""
+        documents: dict[str, dict[str, Any]] = {}
+        for chunk in self.vector_store.chunks:
+            entry = documents.setdefault(
+                chunk.doc_id,
+                {
+                    "doc_id": chunk.doc_id,
+                    "title": chunk.title,
+                    "source": chunk.source,
+                    "chunks": 0,
+                    "words": 0,
+                },
+            )
+            entry["chunks"] += 1
+            entry["words"] += len(chunk.text.split())
+        return list(documents.values())
+
+    def remove_document(self, doc_id: str) -> int:
+        removed = self.vector_store.remove_document(doc_id)
+        self.bm25_index.remove_document(doc_id)
+        return removed
+
+    def clear(self) -> None:
+        self.vector_store.clear()
+        self.bm25_index.clear()
+
     # --- querying --------------------------------------------------------
 
     def retrieve(self, question: str, top_k: int | None = None) -> list[ScoredChunk]:
@@ -132,7 +210,22 @@ class RAGPipeline:
 
     def query(self, question: str, top_k: int | None = None) -> Answer:
         contexts, debug = self.retriever.retrieve(question, top_k)
-        answer = self.generator.generate(question, contexts)
+        try:
+            answer = self.generator.generate(question, contexts)
+        except Exception as exc:
+            # A hosted model can be down, rate limited or mis-keyed. The
+            # retrieval already succeeded, so rather than turn that into an
+            # error page, answer from the same passages by quoting them - and
+            # say plainly that this is what happened.
+            if self.settings.resolved_llm_backend() == "extractive":
+                raise
+            logger.warning("Answer engine failed, falling back to extractive: %s", exc)
+            answer = Generator(self._extractive_engine()).generate(question, contexts)
+            answer.notice = (
+                f"The AI model could not be reached ({_describe_failure(exc)}), "
+                "so this answer quotes your documents directly instead. "
+                "Try again in a minute for a written answer."
+            )
         logger.debug(
             "q=%r dense=%d lexical=%d fused=%d cited=%s",
             question, debug.dense_hits, debug.lexical_hits,
@@ -146,9 +239,9 @@ class RAGPipeline:
             "documents": len({c.doc_id for c in self.vector_store.chunks}),
             "embedder": self.embedder.name,
             "embedding_dim": self.embedder.dim,
-            # Report the configured backend rather than touching `generator`,
-            # which would construct a client (and demand a key) just to answer
-            # a health check.
-            "llm_backend": self.settings.llm_backend,
+            # Report the backend `auto` resolves to rather than touching
+            # `generator`, which would construct a client just to answer a
+            # health check.
+            "llm_backend": self.settings.resolved_llm_backend(),
             "reranker": getattr(self.retriever.reranker, "name", None),
         }

@@ -1,8 +1,11 @@
-"""Build the search index from a corpus directory.
+"""Add documents to the app from the command line - the web page's upload
+button, for folders too large to drag in.
 
-    python scripts/ingest.py                      # defaults to data/corpus
-    python scripts/ingest.py --path ~/my-docs
-    python scripts/ingest.py --embedding-backend gemini
+    python scripts/ingest.py ~/Documents/contracts       # add a folder
+    python scripts/ingest.py report.pdf                  # add one file
+    python scripts/ingest.py ~/notes --fresh             # replace everything
+
+Documents already in the index are updated in place, not duplicated.
 """
 
 from __future__ import annotations
@@ -21,62 +24,49 @@ from rag.pipeline import RAGPipeline  # noqa: E402
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--path", type=Path, default=None, help="Corpus file or directory")
-    parser.add_argument("--index-dir", type=Path, default=None)
-    parser.add_argument(
-        "--embedding-backend", choices=["gemini", "local", "hash"], default=None
-    )
-    parser.add_argument("--chunk-size", type=int, default=None)
-    parser.add_argument("--chunk-overlap", type=int, default=None)
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("path", type=Path, help="A file or a folder of .txt, .md or .pdf files")
+    parser.add_argument("--fresh", action="store_true", help="Remove everything already indexed first")
+    parser.add_argument("--index-dir", type=Path, default=None, help="Index location (default: the app's)")
+    parser.add_argument("--embedding-backend", choices=["gemini", "openai", "local", "hash"], default=None)
     parser.add_argument("-v", "--verbose", action="store_true")
     args = parser.parse_args()
 
     logging.basicConfig(
-        level=logging.DEBUG if args.verbose else logging.INFO,
+        level=logging.DEBUG if args.verbose else logging.WARNING,
         format="%(levelname)s %(name)s: %(message)s",
     )
+
+    if not args.path.exists():
+        print(f"Nothing at {args.path}.", file=sys.stderr)
+        return 1
 
     overrides = {
         key: value
         for key, value in {
             "index_dir": args.index_dir,
             "embedding_backend": args.embedding_backend,
-            "chunk_size": args.chunk_size,
-            "chunk_overlap": args.chunk_overlap,
         }.items()
         if value is not None
     }
     settings = get_settings(**overrides)
-    corpus = args.path or settings.corpus_dir
-
-    if not Path(corpus).exists():
-        print(
-            f"Corpus not found at {corpus}.\n"
-            "Run `python scripts/fetch_corpus.py` first, or pass --path.",
-            file=sys.stderr,
-        )
-        return 1
-
-    print(f"Corpus:    {corpus}")
-    print(f"Embedder:  {settings.embedding_backend}")
-    print(f"Chunking:  {settings.chunk_size} words, {settings.chunk_overlap} overlap")
 
     started = time.perf_counter()
-    pipeline = RAGPipeline.create(settings)
-    documents, chunks = pipeline.ingest_path(Path(corpus))
+    pipeline = RAGPipeline.create(settings) if args.fresh else RAGPipeline.open(settings)
+    before = len(pipeline.list_documents())
+    documents, chunks = pipeline.ingest_path(args.path)
     if chunks == 0:
-        print("No supported documents found (.txt, .md, .pdf).", file=sys.stderr)
+        print("No readable .txt, .md or .pdf files found there.", file=sys.stderr)
         return 1
     pipeline.save()
-    elapsed = time.perf_counter() - started
 
+    total = len(pipeline.list_documents())
     print(
-        f"\nIndexed {documents} documents into {chunks} chunks "
-        f"in {elapsed:.1f}s -> {settings.index_dir}"
+        f"Indexed {documents} document(s) into {chunks} passages in "
+        f"{time.perf_counter() - started:.1f}s. The app now has {total} document(s)"
+        + ("" if args.fresh else f" ({total - before:+d})")
+        + "."
     )
-    for key, value in pipeline.stats().items():
-        print(f"  {key}: {value}")
     return 0
 
 

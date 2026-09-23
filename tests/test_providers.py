@@ -16,15 +16,35 @@ import pytest
 
 from rag.config import get_settings
 from rag.embeddings import HashEmbedder, get_embedder
-from rag.llm import MockLLM, get_llm
+from rag.llm import ExtractiveLLM, get_llm
 
 
 class TestBackendSelection:
     def test_hash_embedder_is_selected(self, settings):
         assert isinstance(get_embedder(settings), HashEmbedder)
 
-    def test_mock_llm_is_selected(self, settings):
-        assert isinstance(get_llm(settings), MockLLM)
+    def test_extractive_engine_is_selected(self, settings):
+        assert isinstance(get_llm(settings), ExtractiveLLM)
+
+    def test_auto_with_no_keys_answers_extractively(self, settings):
+        """The first-run experience: no .env at all still answers."""
+        auto = settings.model_copy(
+            update={"llm_backend": "auto", "google_api_key": None, "openai_api_key": None}
+        )
+        assert auto.resolved_llm_backend() == "extractive"
+        assert isinstance(get_llm(auto), ExtractiveLLM)
+
+    def test_auto_prefers_gemini_then_openai(self, settings):
+        both = settings.model_copy(
+            update={"llm_backend": "auto", "google_api_key": "g", "openai_api_key": "o"}
+        )
+        assert both.resolved_llm_backend() == "gemini"
+        openai_only = both.model_copy(update={"google_api_key": None})
+        assert openai_only.resolved_llm_backend() == "openai"
+
+    def test_an_explicit_choice_beats_auto(self, settings):
+        forced = settings.model_copy(update={"llm_backend": "extractive", "google_api_key": "g"})
+        assert forced.resolved_llm_backend() == "extractive"
 
     def test_unknown_embedding_backend_is_rejected(self, settings):
         with pytest.raises(ValueError, match="Unknown embedding backend"):

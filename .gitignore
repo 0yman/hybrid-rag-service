@@ -9,7 +9,11 @@ venv/
 dist/
 build/
 
-# The FAISS index is a build artefact - rebuild with scripts/ingest.py.
-# data/corpus/ IS committed, so the evaluation numbers are reproducible
-# from a clean clone rather than depending on what Wikipedia says today.
+# Your documents and the index built from them stay on your machine.
 data/index/
+data/uploads/
+
+# The benchmark index is rebuilt by `make eval`. The benchmark corpus itself
+# (data/benchmark/) IS committed, so evaluation numbers are reproducible from a
+# clean clone rather than depending on what Wikipedia says today.
+data/benchmark_index/

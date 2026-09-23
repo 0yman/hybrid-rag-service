@@ -36,7 +36,61 @@ def _read_pdf(path: Path) -> str:
 
     reader = PdfReader(str(path))
     pages = [(page.extract_text() or "") for page in reader.pages]
-    return "\n\n".join(pages)
+    return "\n\n".join(reflow_pdf_text(page) for page in pages)
+
+
+_SENTENCE_END = (".", "!", "?", ":", ";")
+
+
+def reflow_pdf_text(text: str) -> str:
+    """Rebuild paragraphs from a PDF's visual lines.
+
+    PDF text comes out one printed line at a time: every line ends in a
+    newline whether or not the sentence did, and headings are just short lines
+    with nothing to mark them. Left like that, an answer quotes
+    "Eligibility Employees become eligible after a three month probation
+    period" - a heading glued onto a sentence broken where the page wrapped.
+
+    Wrapped lines are joined with a space. A short line with no closing
+    punctuation that starts a new block is taken to be a heading and marked
+    as markdown, so the rest of the pipeline treats it exactly like a heading
+    in a .md file - including the first one becoming the document's title.
+    """
+    lines = [line.strip() for line in text.split("\n")]
+    out: list[str] = []
+    paragraph: list[str] = []
+    first_heading = True
+
+    def flush() -> None:
+        if paragraph:
+            out.append(" ".join(paragraph))
+            paragraph.clear()
+
+    for i, line in enumerate(lines):
+        if not line:
+            flush()
+            continue
+        previous = next((lines[j] for j in range(i - 1, -1, -1) if lines[j]), "")
+        following = next((lines[j] for j in range(i + 1, len(lines)) if lines[j]), "")
+        is_heading = (
+            len(line.split()) <= 8
+            and not line.endswith((*_SENTENCE_END, ","))
+            and (not previous or previous.endswith(_SENTENCE_END))
+            and following[:1].isupper()
+        )
+        if is_heading:
+            flush()
+            # A single newline keeps the heading in the same block as the
+            # paragraph it introduces, which is how the answer engine knows to
+            # strip it rather than quote it.
+            paragraph.append(("# " if first_heading else "## ") + line + "\n")
+            first_heading = False
+        elif paragraph and paragraph[-1].endswith("-"):
+            paragraph[-1] = paragraph[-1] + line  # a word split across lines
+        else:
+            paragraph.append(line)
+    flush()
+    return "\n\n".join(block.replace("\n ", "\n") for block in out)
 
 
 def load_file(path: Path) -> Document | None:

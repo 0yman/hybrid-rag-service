@@ -1,0 +1,4 @@
+# Optional. Only needed for the cross-encoder reranker, and as an alternative
+# embedding engine. Pulls in PyTorch - several GB on Linux - which is why it is
+# not part of the default install.
+sentence-transformers>=3.0

@@ -1,0 +1,675 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ask your documents</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<style>
+  /* Atkinson Hyperlegible for the interface - it was designed for readers with
+     low vision, which suits a tool meant for anyone. Answers are set in a
+     serif because they are reading material, not controls. The yellow is a
+     highlighter: citations are what this app is for, so they are marked the
+     way you would mark a source in a printed page. */
+  :root {
+    --ground:     #f5f6f8;
+    --surface:    #ffffff;
+    --surface-2:  #f0f2f5;
+    --ink:        #1a2233;
+    --ink-soft:   #4d5768;
+    --ink-faint:  #7c8594;
+    --rule:       #dde1e8;
+    --accent:     #2f4b8f;
+    --accent-ink: #ffffff;
+    --accent-dim: #e6ebf5;
+    --mark:       #ffe27a;
+    --mark-ink:   #3b2f00;
+    --good:       #1f7a4d;
+    --warn:       #9a5b00;
+    --warn-bg:    #fff4df;
+    --bad:        #b3261e;
+    --shadow:     0 1px 2px rgba(26, 34, 51, .06), 0 4px 16px rgba(26, 34, 51, .05);
+
+    --ui:    "Atkinson Hyperlegible", "Segoe UI", system-ui, -apple-system, sans-serif;
+    --read:  "Source Serif 4", Georgia, "Times New Roman", serif;
+    --mono:  ui-monospace, "Cascadia Mono", Consolas, "SF Mono", monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:     #11141a;
+      --surface:    #191d25;
+      --surface-2:  #20252f;
+      --ink:        #e7eaf0;
+      --ink-soft:   #aab2c0;
+      --ink-faint:  #7d8595;
+      --rule:       #2b313c;
+      --accent:     #8ea7e6;
+      --accent-ink: #0f1522;
+      --accent-dim: #1f2940;
+      --mark:       #5c4a0f;
+      --mark-ink:   #ffe9a3;
+      --good:       #5fcf94;
+      --warn:       #f2b14c;
+      --warn-bg:    #2d2412;
+      --bad:        #ff8a80;
+      --shadow:     0 1px 2px rgba(0, 0, 0, .3);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground:     #11141a;
+    --surface:    #191d25;
+    --surface-2:  #20252f;
+    --ink:        #e7eaf0;
+    --ink-soft:   #aab2c0;
+    --ink-faint:  #7d8595;
+    --rule:       #2b313c;
+    --accent:     #8ea7e6;
+    --accent-ink: #0f1522;
+    --accent-dim: #1f2940;
+    --mark:       #5c4a0f;
+    --mark-ink:   #ffe9a3;
+    --good:       #5fcf94;
+    --warn:       #f2b14c;
+    --warn-bg:    #2d2412;
+    --bad:        #ff8a80;
+    --shadow:     0 1px 2px rgba(0, 0, 0, .3);
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--ui);
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  button, input, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+
+  /* ---------- header ---------- */
+
+  .top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 22px 20px 6px;
+  }
+  .top h1 { margin: 0; font-size: 1.35rem; letter-spacing: -.01em; }
+  .top p  { margin: 2px 0 0; color: var(--ink-soft); font-size: .95rem; }
+
+  .engine {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border: 1px solid var(--rule);
+    border-radius: 999px;
+    background: var(--surface);
+    font-size: .85rem;
+    color: var(--ink-soft);
+  }
+  .engine .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ink-faint); }
+  .engine[data-model="true"] .dot { background: var(--good); }
+  .engine b { color: var(--ink); font-weight: 700; }
+
+  /* ---------- layout ---------- */
+
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(280px, 360px) 1fr;
+    gap: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 14px 20px 48px;
+    align-items: start;
+  }
+  @media (max-width: 860px) { .layout { grid-template-columns: 1fr; } }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    min-width: 0;
+  }
+  .panel h2 {
+    margin: 0;
+    font-size: .8rem;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .panel h2 span { font-family: var(--mono); letter-spacing: 0; text-transform: none; }
+
+  /* ---------- documents ---------- */
+
+  .drop {
+    border: 2px dashed var(--rule);
+    border-radius: 12px;
+    padding: 22px 14px;
+    text-align: center;
+    color: var(--ink-soft);
+    background: var(--surface-2);
+    transition: border-color .15s, background .15s;
+  }
+  .drop.over { border-color: var(--accent); background: var(--accent-dim); }
+  .drop strong { display: block; color: var(--ink); font-size: 1rem; margin-bottom: 4px; }
+  .drop small { display: block; margin-top: 8px; color: var(--ink-faint); font-size: .8rem; }
+  .linkish {
+    background: none; border: 0; padding: 0;
+    color: var(--accent); text-decoration: underline; text-underline-offset: 3px;
+  }
+
+  .uploads { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; font-size: .88rem; }
+  .uploads li { display: flex; gap: 8px; align-items: baseline; }
+  .uploads .tag { font-family: var(--mono); font-size: .75rem; padding: 1px 6px; border-radius: 4px; flex: none; }
+  .uploads .added, .uploads .updated { background: var(--accent-dim); color: var(--accent); }
+  .uploads .skipped { background: var(--warn-bg); color: var(--warn); }
+  .uploads .name { overflow-wrap: anywhere; }
+  .uploads .why { color: var(--ink-faint); }
+
+  .docs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+  .docs li {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 2px 10px;
+    padding: 10px 2px;
+    border-top: 1px solid var(--rule);
+  }
+  .docs li:first-child { border-top: 0; }
+  .docs .title { font-weight: 700; overflow-wrap: anywhere; }
+  .docs .meta { grid-column: 1; font-family: var(--mono); font-size: .75rem; color: var(--ink-faint); overflow-wrap: anywhere; }
+  .docs .remove {
+    grid-row: 1 / span 2; grid-column: 2; align-self: center;
+    width: 30px; height: 30px; border-radius: 8px;
+    border: 1px solid transparent; background: none; color: var(--ink-faint);
+    font-size: 1.1rem; line-height: 1;
+  }
+  .docs .remove:hover { border-color: var(--rule); color: var(--bad); }
+
+  .empty { color: var(--ink-soft); font-size: .92rem; margin: 0; }
+
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
+  .btn {
+    border: 1px solid var(--rule);
+    background: var(--surface);
+    border-radius: 10px;
+    padding: 8px 14px;
+    font-weight: 700;
+    font-size: .92rem;
+  }
+  .btn:hover { border-color: var(--ink-faint); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .btn.primary:hover { filter: brightness(1.08); }
+  .btn.danger { color: var(--bad); }
+  .btn:disabled { opacity: .5; cursor: not-allowed; filter: none; }
+
+  /* ---------- ask ---------- */
+
+  .ask { display: flex; flex-direction: column; gap: 10px; }
+  .ask textarea {
+    width: 100%;
+    min-height: 88px;
+    resize: vertical;
+    padding: 12px 14px;
+    border: 1px solid var(--rule);
+    border-radius: 12px;
+    background: var(--surface);
+    font-size: 1.02rem;
+  }
+  .ask textarea:disabled { background: var(--surface-2); }
+  .ask-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+  .hint { color: var(--ink-faint); font-size: .82rem; }
+
+  .examples { display: flex; flex-wrap: wrap; gap: 8px; }
+  .examples button {
+    border: 1px solid var(--rule); background: var(--surface-2);
+    border-radius: 999px; padding: 5px 12px; font-size: .85rem; color: var(--ink-soft);
+  }
+  .examples button:hover { border-color: var(--accent); color: var(--accent); }
+
+  .notice {
+    border-radius: 10px; padding: 10px 14px; font-size: .9rem;
+    background: var(--warn-bg); color: var(--warn);
+  }
+  .error { border-radius: 10px; padding: 10px 14px; font-size: .92rem; border: 1px solid var(--bad); color: var(--bad); }
+
+  .working { display: flex; align-items: center; gap: 10px; color: var(--ink-soft); }
+  .spinner {
+    width: 18px; height: 18px; border-radius: 50%;
+    border: 2px solid var(--rule); border-top-color: var(--accent);
+    animation: spin .8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .answer {
+    font-family: var(--read);
+    font-size: 1.12rem;
+    line-height: 1.65;
+    margin: 0;
+    max-width: 68ch;
+    overflow-wrap: anywhere;
+  }
+  .answer.abstained { font-family: var(--ui); font-size: 1rem; color: var(--ink-soft); }
+  .abstain-label {
+    display: inline-block; font-size: .78rem; font-weight: 700; letter-spacing: .05em;
+    text-transform: uppercase; color: var(--ink-faint); margin-bottom: 4px;
+  }
+
+  .cite {
+    display: inline-block;
+    min-width: 1.6em;
+    padding: 0 .3em;
+    margin: 0 .1em;
+    border: 0;
+    border-radius: 4px;
+    background: var(--mark);
+    color: var(--mark-ink);
+    font-family: var(--mono);
+    font-size: .78em;
+    font-weight: 700;
+    line-height: 1.5;
+    vertical-align: .1em;
+  }
+
+  .answer-meta { font-family: var(--mono); font-size: .75rem; color: var(--ink-faint); }
+
+  .sources { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+  .source {
+    border: 1px solid var(--rule);
+    border-radius: 12px;
+    padding: 12px 14px;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 4px 12px;
+    transition: border-color .2s, background .2s;
+  }
+  .source.flash { border-color: var(--accent); background: var(--accent-dim); }
+  .source .num {
+    grid-row: 1 / span 3;
+    align-self: start;
+    font-family: var(--mono); font-weight: 700; font-size: .8rem;
+    width: 26px; height: 26px; border-radius: 6px;
+    display: grid; place-items: center;
+    background: var(--surface-2); color: var(--ink-soft);
+  }
+  .source.cited .num { background: var(--mark); color: var(--mark-ink); }
+  .source .where { font-weight: 700; overflow-wrap: anywhere; }
+  .source .where span { font-weight: 400; font-family: var(--mono); font-size: .75rem; color: var(--ink-faint); margin-left: 6px; }
+  .source .text { color: var(--ink-soft); font-size: .92rem; margin: 0; overflow-wrap: anywhere; }
+  .source .why { font-family: var(--mono); font-size: .72rem; color: var(--ink-faint); }
+
+  details.explain { font-size: .85rem; color: var(--ink-soft); }
+  details.explain summary { cursor: pointer; color: var(--ink-faint); }
+  details.explain p { margin: 8px 0 0; max-width: 64ch; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .spinner { animation: none; }
+    * { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div>
+    <h1>Ask your documents</h1>
+    <p>Add files, ask a question, and see exactly which passage every answer came from.</p>
+  </div>
+  <div class="engine" id="engine" data-model="false" title="">
+    <span class="dot" aria-hidden="true"></span>
+    <span>Answers: <b id="engine-label">loading…</b></span>
+  </div>
+</header>
+
+<main class="layout">
+
+  <section class="panel" aria-labelledby="docs-heading">
+    <h2 id="docs-heading">Your documents <span id="doc-count"></span></h2>
+
+    <div class="drop" id="drop">
+      <strong>Drop files here</strong>
+      or <button class="linkish" type="button" id="browse">choose files</button>
+      <input type="file" id="file-input" multiple hidden>
+      <small id="accepted">PDF, TXT or Markdown</small>
+    </div>
+
+    <ul class="uploads" id="uploads" aria-live="polite"></ul>
+
+    <p class="empty" id="docs-empty" hidden>
+      No documents yet. Add your own files above, or try it first with the sample documents.
+    </p>
+    <ul class="docs" id="docs"></ul>
+
+    <div class="actions">
+      <button class="btn" type="button" id="load-sample" hidden>Load sample documents</button>
+      <button class="btn danger" type="button" id="clear-all" hidden>Remove all</button>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="ask-heading">
+    <h2 id="ask-heading">Ask a question</h2>
+
+    <form class="ask" id="ask-form">
+      <label for="question" class="hint" id="question-hint">Ask anything about the documents you added.</label>
+      <textarea id="question" placeholder="e.g. What does the contract say about late payment?" required></textarea>
+      <div class="ask-row">
+        <span class="hint">Enter to ask · Shift+Enter for a new line</span>
+        <button class="btn primary" type="submit" id="ask-btn">Ask</button>
+      </div>
+    </form>
+
+    <div class="examples" id="examples" hidden></div>
+
+    <div id="result" aria-live="polite"></div>
+
+    <details class="explain">
+      <summary>How are answers found?</summary>
+      <p>
+        Your documents are split into short passages. Each question is matched
+        two ways — by meaning, and by exact keywords — and the two rankings are
+        merged. The best passages are then used to write the answer, and every
+        sentence is tagged with the passage it came from. If the passages do not
+        contain the answer, it says so instead of guessing.
+      </p>
+      <p id="engine-explain"></p>
+    </details>
+  </section>
+
+</main>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const state = { documents: [], status: null, busy: false };
+
+  const SAMPLE_QUESTIONS = [
+    "What is demurrage, and what is its opposite called?",
+    "Why is a 20-foot container slightly shorter than 20 feet?",
+    "When was the first SOLAS treaty passed and why?",
+    "Who won the 2018 World Cup?",
+  ];
+
+  // Everything that comes from a document or the server is escaped before it
+  // touches innerHTML. The only markup added back is the citation marker.
+  const escapeHtml = (text) =>
+    String(text ?? "").replace(/[&<>"']/g, (c) => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+    }[c]));
+
+  async function api(path, options = {}) {
+    let response;
+    try {
+      response = await fetch(path, options);
+    } catch {
+      throw new Error("Could not reach the app. Is it still running in your terminal?");
+    }
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const detail = typeof body.detail === "string" ? body.detail : "Something went wrong.";
+      throw new Error(detail);
+    }
+    return body;
+  }
+
+  // ---------- documents ----------
+
+  function renderDocuments() {
+    const docs = state.documents;
+    $("doc-count").textContent = docs.length ? `${docs.length}` : "";
+    $("docs-empty").hidden = docs.length > 0;
+    $("clear-all").hidden = docs.length === 0;
+
+    const sampleLoaded = docs.some((d) => d.source === "demurrage.md");
+    $("load-sample").hidden = !state.status?.sample_available || sampleLoaded;
+
+    $("docs").innerHTML = docs.map((d) => `
+      <li>
+        <span class="title">${escapeHtml(d.title)}</span>
+        <span class="meta">${escapeHtml(d.source)} · ${d.chunks} passage${d.chunks === 1 ? "" : "s"}</span>
+        <button class="remove" type="button" data-doc="${escapeHtml(d.doc_id)}"
+                aria-label="Remove ${escapeHtml(d.title)}" title="Remove">×</button>
+      </li>`).join("");
+
+    const hasDocs = docs.length > 0;
+    $("question").disabled = !hasDocs || state.busy;
+    $("ask-btn").disabled = !hasDocs || state.busy;
+    $("question-hint").textContent = hasDocs
+      ? "Ask anything about the documents you added."
+      : "Add at least one document to start asking questions.";
+
+    $("examples").hidden = !sampleLoaded;
+    $("examples").innerHTML = sampleLoaded
+      ? SAMPLE_QUESTIONS.map((q) => `<button type="button">${escapeHtml(q)}</button>`).join("")
+      : "";
+  }
+
+  async function refresh() {
+    const [status, documents] = await Promise.all([api("/status"), api("/documents")]);
+    state.status = status;
+    state.documents = documents;
+
+    const engine = $("engine");
+    engine.dataset.model = String(status.has_model);
+    $("engine-label").textContent = status.engine_label;
+    $("accepted").textContent =
+      `${status.accepted_types.map((t) => t.replace(".", "").toUpperCase()).join(", ")} · up to ${status.max_upload_mb} MB each`;
+    $("engine-explain").textContent = status.has_model
+      ? `Answers are written by ${status.engine_label}, using only the passages shown under each answer.`
+      : "No AI model is configured, so answers quote the most relevant sentences directly from your documents. Add a free Google Gemini key to the .env file for written answers — see the README.";
+    engine.title = $("engine-explain").textContent;
+    renderDocuments();
+  }
+
+  function showUploads(results) {
+    $("uploads").innerHTML = results.map((r) => `
+      <li>
+        <span class="tag ${escapeHtml(r.status)}">${escapeHtml(r.status)}</span>
+        <span><span class="name">${escapeHtml(r.filename)}</span>
+        ${r.reason ? `<span class="why"> — ${escapeHtml(r.reason)}</span>` : ""}</span>
+      </li>`).join("");
+  }
+
+  async function upload(fileList) {
+    const files = Array.from(fileList || []);
+    if (!files.length) return;
+    const form = new FormData();
+    files.forEach((f) => form.append("files", f));
+    $("uploads").innerHTML =
+      `<li class="working"><span class="spinner"></span>Reading ${files.length} file${files.length === 1 ? "" : "s"}… large PDFs can take a little while.</li>`;
+    try {
+      showUploads(await api("/documents", { method: "POST", body: form }));
+      await refresh();
+    } catch (err) {
+      $("uploads").innerHTML = `<li class="error">${escapeHtml(err.message)}</li>`;
+    }
+  }
+
+  $("browse").addEventListener("click", () => $("file-input").click());
+  $("file-input").addEventListener("change", (e) => { upload(e.target.files); e.target.value = ""; });
+
+  const drop = $("drop");
+  ["dragenter", "dragover"].forEach((type) => drop.addEventListener(type, (e) => {
+    e.preventDefault(); drop.classList.add("over");
+  }));
+  ["dragleave", "drop"].forEach((type) => drop.addEventListener(type, (e) => {
+    e.preventDefault(); drop.classList.remove("over");
+  }));
+  drop.addEventListener("drop", (e) => upload(e.dataTransfer.files));
+
+  $("docs").addEventListener("click", async (e) => {
+    const button = e.target.closest(".remove");
+    if (!button) return;
+    button.disabled = true;
+    try {
+      await api(`/documents/${encodeURIComponent(button.dataset.doc)}`, { method: "DELETE" });
+      await refresh();
+    } catch (err) {
+      button.disabled = false;
+      $("uploads").innerHTML = `<li class="error">${escapeHtml(err.message)}</li>`;
+    }
+  });
+
+  $("load-sample").addEventListener("click", async () => {
+    const button = $("load-sample");
+    button.disabled = true;
+    button.textContent = "Loading…";
+    $("uploads").innerHTML =
+      `<li class="working"><span class="spinner"></span>Adding 22 sample articles on shipping and logistics… about 20 seconds.</li>`;
+    try {
+      const result = await api("/documents/sample", { method: "POST" });
+      $("uploads").innerHTML =
+        `<li><span class="tag added">added</span><span>${result.documents} sample articles (${result.chunks} passages)</span></li>`;
+      await refresh();
+    } catch (err) {
+      $("uploads").innerHTML = `<li class="error">${escapeHtml(err.message)}</li>`;
+    } finally {
+      button.disabled = false;
+      button.textContent = "Load sample documents";
+    }
+  });
+
+  $("clear-all").addEventListener("click", async () => {
+    if (!confirm("Remove every document from the app? Your original files are not touched.")) return;
+    try {
+      await api("/documents", { method: "DELETE" });
+      $("uploads").innerHTML = "";
+      $("result").innerHTML = "";
+      await refresh();
+    } catch (err) {
+      $("uploads").innerHTML = `<li class="error">${escapeHtml(err.message)}</li>`;
+    }
+  });
+
+  // ---------- asking ----------
+
+  // Turns "[1][2]" into highlighted, clickable markers - but only for numbers
+  // that point at a passage actually shown.
+  function withCitations(text, count) {
+    return escapeHtml(text).replace(/\[(\d{1,2})\]/g, (whole, n) => {
+      const i = Number(n);
+      if (i < 1 || i > count) return "";
+      return `<button type="button" class="cite" data-cite="${i}" aria-label="Show source ${i}">${i}</button>`;
+    });
+  }
+
+  // Component scores, translated out of retrieval jargon.
+  function whyRanked(scores) {
+    const parts = [];
+    if (scores.lexical_rank) parts.push(`keyword match #${scores.lexical_rank}`);
+    if (scores.dense_rank) parts.push(`meaning match #${scores.dense_rank}`);
+    return parts.join(" · ") || "";
+  }
+
+  function renderAnswer(data) {
+    const cited = new Set(data.citations.map((c) => c.marker));
+    const seconds = (data.latency_ms / 1000).toFixed(1);
+    const engine = data.engine === "extractive" ? "quoted from your documents" : `written by ${data.engine}`;
+
+    const answerHtml = data.abstained
+      ? `<div><span class="abstain-label">Not in your documents</span>
+           <p class="answer abstained">${escapeHtml(data.answer)}</p></div>`
+      : `<p class="answer">${withCitations(data.answer, data.contexts.length)}</p>`;
+
+    const sourcesHtml = data.contexts.length && !data.abstained ? `
+      <h2 style="margin-top:6px">Passages used</h2>
+      <ol class="sources">
+        ${data.contexts.map((c) => `
+          <li class="source ${cited.has(c.marker) ? "cited" : ""}" id="src-${c.marker}">
+            <span class="num">${c.marker}</span>
+            <span class="where">${escapeHtml(c.title)}<span>${escapeHtml(c.source)}</span></span>
+            <p class="text">${escapeHtml(c.preview)}${c.preview.length >= 400 ? "…" : ""}</p>
+            <span class="why">${escapeHtml(whyRanked(c.component_scores))}</span>
+          </li>`).join("")}
+      </ol>` : "";
+
+    $("result").innerHTML = `
+      ${data.notice ? `<div class="notice">${escapeHtml(data.notice)}</div>` : ""}
+      ${answerHtml}
+      <div class="answer-meta">${escapeHtml(engine)} · ${seconds}s</div>
+      ${sourcesHtml}`;
+    $("result").style.display = "flex";
+    $("result").style.flexDirection = "column";
+    $("result").style.gap = "12px";
+  }
+
+  async function ask(question) {
+    question = question.trim();
+    if (!question || state.busy) return;
+    state.busy = true;
+    renderDocuments();
+    $("result").innerHTML = state.status?.has_model
+      ? `<div class="working"><span class="spinner"></span>Searching your documents and writing an answer… free AI models can take up to a minute when busy.</div>`
+      : `<div class="working"><span class="spinner"></span>Searching your documents…</div>`;
+    try {
+      renderAnswer(await api("/query", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question }),
+      }));
+    } catch (err) {
+      $("result").innerHTML = `<div class="error">${escapeHtml(err.message)}</div>`;
+    } finally {
+      state.busy = false;
+      renderDocuments();
+      $("question").focus();
+    }
+  }
+
+  $("ask-form").addEventListener("submit", (e) => { e.preventDefault(); ask($("question").value); });
+  $("question").addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); ask($("question").value); }
+  });
+  $("examples").addEventListener("click", (e) => {
+    const button = e.target.closest("button");
+    if (!button) return;
+    $("question").value = button.textContent;
+    ask(button.textContent);
+  });
+
+  $("result").addEventListener("click", (e) => {
+    const marker = e.target.closest(".cite");
+    if (!marker) return;
+    const source = $(`src-${marker.dataset.cite}`);
+    if (!source) return;
+    source.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    source.classList.add("flash");
+    setTimeout(() => source.classList.remove("flash"), 1400);
+  });
+
+  // A question in the address bar (?q=...) is asked on load, so a useful
+  // question can be bookmarked or shared as a link.
+  refresh().then(() => {
+    const q = new URLSearchParams(location.search).get("q");
+    if (q && state.documents.length) {
+      $("question").value = q;
+      ask(q);
+    }
+  }).catch((err) => {
+    $("engine-label").textContent = "unavailable";
+    $("result").innerHTML = `<div class="error">${escapeHtml(err.message)}</div>`;
+  });
+})();
+</script>
+</body>
+</html>

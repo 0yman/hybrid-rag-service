@@ -55,8 +55,33 @@ def split_sentences(text: str) -> list[str]:
     return sentences
 
 
+_HEADING_ONLY = re.compile(r"^#{1,6}[ \t]+[^\n]+$")
+
+
 def split_paragraphs(text: str) -> list[str]:
     return [p.strip() for p in re.split(r"\n\s*\n", text) if p.strip()]
+
+
+def _join(sentences: list[str]) -> str:
+    """Join sentences into chunk text, ending a heading with a newline.
+
+    A heading on its own line ("## Eligibility", then a blank line) is its own
+    one-line sentence. Joined to the next with a space, nothing downstream
+    could tell where the heading stopped and the text began, and an answer
+    would quote "Eligibility Employees become eligible...".
+
+    Only the separator changes - never which sentences go in which chunk - so
+    the words, the chunk boundaries and the overlaps are exactly what they
+    would have been. (An earlier version merged heading paragraphs into the
+    next paragraph instead; that moved chunk boundaries and shifted the
+    benchmark's recall, which is how it was caught.)
+    """
+    parts: list[str] = []
+    for i, sentence in enumerate(sentences):
+        parts.append(sentence)
+        if i < len(sentences) - 1:
+            parts.append("\n" if _HEADING_ONLY.match(sentence) else " ")
+    return "".join(parts)
 
 
 def _word_count(text: str) -> int:
@@ -98,7 +123,7 @@ def chunk_text(
         nonlocal current, current_words
         if not current:
             return
-        chunks.append(" ".join(current))
+        chunks.append(_join(current))
         tail = _overlap_tail(current, chunk_overlap)
         current = list(tail)
         current_words = sum(_word_count(s) for s in current)
@@ -111,7 +136,7 @@ def chunk_text(
             if words >= chunk_size:
                 flush()
                 if current:
-                    chunks.append(" ".join(current))
+                    chunks.append(_join(current))
                     current, current_words = [], 0
                 chunks.append(sentence)
                 continue
@@ -121,7 +146,7 @@ def chunk_text(
             current_words += words
 
     if current:
-        chunks.append(" ".join(current))
+        chunks.append(_join(current))
 
     # Fold a too-small trailing chunk back into its predecessor; on its own it
     # carries too little context to ever retrieve well. Only do so when the
