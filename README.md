@@ -283,6 +283,14 @@ make eval-reference  # sentence-transformers; needs requirements-extras.txt
 - **One user at a time.** It's built as a personal tool on your own machine,
   not a shared server.
 
+## See also
+
+- [ask-your-data](https://github.com/0yman/ask-your-data), the sibling project:
+  a tool-calling text-to-SQL agent, measured the same way and
+  [live to try](https://ask-your-data-i67m.onrender.com).
+- [0yman.github.io](https://0yman.github.io), both projects and what measuring
+  them changed.
+
 ## License
 
 MIT. The benchmark articles are from Wikipedia, CC BY-SA 4.0, attributed in
